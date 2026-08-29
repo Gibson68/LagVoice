@@ -1,0 +1,306 @@
+@import "tailwindcss";
+
+@theme {
+  /* UNILAG Student Portal Brand (from studentportal.unilag.edu.ng) */
+  --color-maroon: #1266f1;
+  --color-maroon-dark: #0e52c1;
+  --color-maroon-deep: #0a3d94;
+  --color-maroon-light: #EBF3FF;
+  --color-gold: #ffa900;
+  --color-gold-dark: #cc8800;
+  --color-gold-light: #ffcc5c;
+  --color-gold-pale: #FFF8E6;
+
+  /* Surface palette */
+  --color-cream: #F5F7FA;
+  --color-paper: #FFFFFF;
+  --color-mist: #E4E8EE;
+  --color-mist-light: #F0F2F5;
+
+  /* Status */
+  --color-resolved: #2E7D32;
+  --color-pending: #ED6C02;
+  --color-review: #1976D2;
+  --color-escalated: #D32F2F;
+
+  /* Type — Inter */
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* Spacing */
+  --spacing-rail: 260px;
+}
+
+/* ─── Base ─── */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: #1A1A1A;
+    background-color: var(--color-cream);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background-color: var(--color-gold);
+    color: #1A1A1A;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-maroon);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-mist); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-maroon); }
+}
+
+/* ─── Skeleton shimmer ─── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--color-mist-light) 25%, var(--color-mist) 50%, var(--color-mist-light) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+/* ─── Grain texture overlay ─── */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Auth page floating orbs ─── */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  will-change: transform;
+}
+
+.orb-1 {
+  width: 300px;
+  height: 300px;
+  background: var(--color-gold);
+  top: -80px;
+  right: -60px;
+  animation: orb-float-1 12s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 200px;
+  height: 200px;
+  background: var(--color-gold-light);
+  bottom: 10%;
+  left: -40px;
+  animation: orb-float-2 15s ease-in-out infinite;
+}
+
+.orb-3 {
+  width: 150px;
+  height: 150px;
+  background: var(--color-maroon);
+  top: 50%;
+  right: 20%;
+  opacity: 0.08;
+  animation: orb-float-3 18s ease-in-out infinite;
+}
+
+.orb-4 {
+  width: 100px;
+  height: 100px;
+  background: var(--color-gold);
+  bottom: -30px;
+  right: 30%;
+  opacity: 0.1;
+  animation: orb-float-1 10s ease-in-out infinite reverse;
+}
+
+@keyframes orb-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -40px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+@keyframes orb-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-25px, 35px) scale(1.05); }
+  66% { transform: translate(35px, -15px) scale(0.9); }
+}
+
+@keyframes orb-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -30px) scale(1.15); }
+}
+
+/* ─── Fade-in animations ─── */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out both;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.5s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out both;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.5s ease-out both;
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* ─── Staggered entrance for dashboard cards ─── */
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 160ms; }
+.stagger-4 { animation-delay: 240ms; }
+.stagger-5 { animation-delay: 320ms; }
+.stagger-6 { animation-delay: 400ms; }
+.stagger-7 { animation-delay: 480ms; }
+.stagger-8 { animation-delay: 560ms; }
+
+/* ─── Pulse dot for live alerts ─── */
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.8); opacity: 0.4; }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ─── Hover lift for cards ─── */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+/* ─── Progress bar animation ─── */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+
+.animate-progress {
+  animation: progress-fill 1s ease-out both;
+}
+
+/* ─── Count-up animation helper ─── */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-count {
+  animation: count-up 0.6s ease-out both;
+}
+
+/* ─── Floating card animations for AuthPage ─── */
+@keyframes float-card-1 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-12px) rotate(0.5deg); }
+  50% { transform: translateY(-6px) rotate(-0.3deg); }
+  75% { transform: translateY(-15px) rotate(0.2deg); }
+}
+
+@keyframes float-card-2 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(-0.5deg); }
+  66% { transform: translateY(-18px) rotate(0.4deg); }
+}
+
+@keyframes float-card-3 {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-14px) scale(1.01); }
+}
+
+.floating-card-1 {
+  animation: float-card-1 8s ease-in-out infinite;
+}
+
+.floating-card-2 {
+  animation: float-card-2 10s ease-in-out infinite 1s;
+}
+
+.floating-card-3 {
+  animation: float-card-3 9s ease-in-out infinite 0.5s;
+}
+
+/* ─── Smooth page transitions ─── */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: page-enter 0.4s ease-out both;
+}
