@@ -1,6 +1,7 @@
 /**
  * StudentLayout — Left sidebar matching CleanMac icon-only rail style
  * Dark navy sidebar with icons only on desktop, bottom nav on mobile
+ * Includes logout confirmation modal
  */
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
@@ -53,16 +54,68 @@ const logoutIcon = (
   </svg>
 )
 
+/* ── Logout Confirmation Modal ── */
+function LogoutModal({ open, onConfirm, onCancel }) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Confirm logout">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[380px] p-8 animate-slide-in-up border border-[#E4E8EE]">
+        <div className="w-14 h-14 rounded-2xl bg-[#f93154]/10 flex items-center justify-center mx-auto mb-5">
+          <svg className="w-7 h-7 text-[#f93154]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+        </div>
+        <h3 className="text-[18px] font-bold text-[#262626] text-center mb-2">Log out?</h3>
+        <p className="text-[13px] text-[#9fa6b2] text-center mb-7 leading-relaxed">
+          You will be signed out of your account and redirected to the login page.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-xl border border-[#E4E8EE] text-[14px] font-semibold text-[#4f4f4f]
+              hover:bg-[#F5F7FA] transition-all duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-3 rounded-xl bg-[#f93154] text-white text-[14px] font-semibold
+              hover:bg-[#d42843] active:scale-[0.98] transition-all duration-200
+              shadow-[0_4px_14px_rgba(249,49,84,0.25)]"
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function StudentLayout({ children }) {
   const [mobileNav, setMobileNav] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
+  const [showLogout, setShowLogout] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { notifications, unreadCount, markAllAsRead } = useNotifications()
 
+  const handleLogout = () => {
+    setShowLogout(true)
+  }
+
+  const confirmLogout = () => {
+    logout()
+    setShowLogout(false)
+    navigate('/login')
+  }
+
   return (
     <div className="flex h-screen bg-[#F0F3F8]">
+      {/* Logout Confirmation */}
+      <LogoutModal open={showLogout} onConfirm={confirmLogout} onCancel={() => setShowLogout(false)} />
+
       {/* Mobile overlay */}
       {mobileNav && (
         <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMobileNav(false)} />
@@ -71,7 +124,7 @@ export default function StudentLayout({ children }) {
       {/* ═══ Sidebar — Icon-only rail (desktop) ═══ */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-[72px] bg-[#1E1B4B] flex flex-col items-center
-        transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto
+        transition-transform duration-300 lg:translate-x-0 lg:static lg:z-[60]
         ${mobileNav ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Logo */}
@@ -97,9 +150,9 @@ export default function StudentLayout({ children }) {
               title={item.label}
             >
               {item.icon}
-              {/* Tooltip on hover */}
+              {/* Tooltip on hover — z-[70] to float above everything */}
               <span className="absolute left-full ml-3 px-3 py-1.5 bg-[#1E1B4B] text-white text-[12px] font-medium rounded-lg
-                opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
+                opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[70] shadow-lg border border-white/10">
                 {item.label}
               </span>
             </NavLink>
@@ -109,19 +162,25 @@ export default function StudentLayout({ children }) {
         {/* Bottom icons */}
         <div className="flex flex-col items-center gap-1 pb-6">
           <button
-            className="w-11 h-11 rounded-xl flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/8 transition-all duration-200"
+            className="relative w-11 h-11 rounded-xl flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/8 transition-all duration-200 group"
             aria-label="Settings"
-            title="Settings"
           >
             {settingsIcon}
+            <span className="absolute left-full ml-3 px-3 py-1.5 bg-[#1E1B4B] text-white text-[12px] font-medium rounded-lg
+              opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[70] shadow-lg border border-white/10">
+              Settings
+            </span>
           </button>
           <button
-            onClick={() => { logout(); navigate('/login') }}
-            className="w-11 h-11 rounded-xl flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-white/8 transition-all duration-200"
+            onClick={handleLogout}
+            className="relative w-11 h-11 rounded-xl flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-white/8 transition-all duration-200 group"
             aria-label="Log out"
-            title="Log out"
           >
             {logoutIcon}
+            <span className="absolute left-full ml-3 px-3 py-1.5 bg-[#1E1B4B] text-white text-[12px] font-medium rounded-lg
+              opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[70] shadow-lg border border-white/10">
+              Log out
+            </span>
           </button>
         </div>
       </aside>
@@ -129,7 +188,7 @@ export default function StudentLayout({ children }) {
       {/* ═══ Main Content ═══ */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-[68px] px-6 bg-white border-b border-[#E4E8EE] shrink-0">
+        <header className="h-[68px] px-6 bg-white border-b border-[#1266f1]/10 shrink-0">
           <div className="flex items-center justify-between h-full">
             {/* Left: hamburger + title */}
             <div className="flex items-center gap-4">
@@ -155,7 +214,7 @@ export default function StudentLayout({ children }) {
             {/* Right: search + notif + avatar */}
             <div className="flex items-center gap-2">
               {/* Search */}
-              <div className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F5F7FA] border border-[#E4E8EE] hover:border-[#1266f1]/20 transition-colors w-56">
+              <div className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F5F7FA] border border-[#1266f1]/8 hover:border-[#1266f1]/20 transition-colors w-56">
                 <svg className="w-4 h-4 text-[#9fa6b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
                 </svg>
@@ -165,11 +224,11 @@ export default function StudentLayout({ children }) {
                   className="bg-transparent border-none text-[13px] focus:outline-none w-full text-[#4f4f4f] placeholder:text-[#9fa6b2]"
                   aria-label="Search"
                 />
-                <kbd className="text-[10px] text-[#9fa6b2] bg-white border border-[#E4E8EE] rounded px-1.5 py-0.5 font-mono shrink-0">/</kbd>
+                <kbd className="text-[10px] text-[#9fa6b2] bg-white border border-[#1266f1]/10 rounded px-1.5 py-0.5 font-mono shrink-0">/</kbd>
               </div>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-[#E4E8EE] hidden md:block" />
+              <div className="w-px h-6 bg-[#1266f1]/8 hidden md:block" />
 
               {/* Notifications */}
               <div className="relative">
@@ -189,8 +248,8 @@ export default function StudentLayout({ children }) {
                 </button>
 
                 {notifOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-[#E4E8EE] z-50 overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-[#E4E8EE]">
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-[#1266f1]/10 z-50 overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[#1266f1]/8">
                       <h3 className="text-[14px] font-semibold text-[#262626]">Notifications</h3>
                       {unreadCount > 0 && (
                         <button
@@ -205,7 +264,7 @@ export default function StudentLayout({ children }) {
                       {notifications.length === 0 ? (
                         <p className="px-5 py-8 text-[13px] text-[#9fa6b2] text-center">No notifications yet</p>
                       ) : notifications.map((n) => (
-                        <div key={n.id} className={`px-5 py-3.5 border-b border-[#E4E8EE]/50 hover:bg-[#F5F7FA] cursor-pointer transition-colors ${!n.read ? 'bg-[#EBF3FF]' : ''}`}>
+                        <div key={n.id} className={`px-5 py-3.5 border-b border-[#1266f1]/5 hover:bg-[#F5F7FA] cursor-pointer transition-colors ${!n.read ? 'bg-[#EBF3FF]' : ''}`}>
                           <p className="text-[13px] font-medium text-[#262626]">{n.title}</p>
                           <p className="text-[12px] text-[#9fa6b2] mt-0.5 leading-relaxed">{n.message}</p>
                         </div>

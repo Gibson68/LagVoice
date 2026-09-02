@@ -2,6 +2,7 @@
  * AuthPage — Sign In / Sign Up
  * Split-screen: clean form left, floating preview cards right
  * Inspired by modern SaaS auth designs with UNILAG maroon/gold palette
+ * Includes back-to-home button
  */
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -130,6 +131,18 @@ export default function AuthPage() {
       {/* ─── Left Panel: Auth Form ─── */}
       <div className="flex-1 flex items-center justify-center p-8 sm:p-10 lg:p-12 min-h-screen">
         <div className="w-full max-w-[420px]">
+          {/* Back to Home */}
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-[13px] text-ink/40 hover:text-ink/70 font-medium transition-colors mb-8 group"
+            aria-label="Back to home page"
+          >
+            <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to home
+          </button>
+
           {/* Logo */}
           <div className="flex items-center gap-3 mb-10 sm:mb-12">
             <img src="/images/logo-n.png" alt="LagVoice" className="w-12 h-12 rounded-xl object-cover shadow-[0_2px_8px_rgba(128,0,0,0.15)]" />
