@@ -45,12 +45,24 @@ export const authService = {
   async login(email, password, role) {
     await delay()
     // Mock: accept any valid-looking credentials
-    const user = mockUsers.find((u) => u.email === email && u.role === role) || {
+    const baseUser = mockUsers.find((u) => u.email === email && u.role === role) || {
       ...mockUsers.find((u) => u.role === role) || mockUsers[0],
+      email,
+    }
+    // Derive a display name from the email prefix if it doesn't match a known user
+    const emailPrefix = email.split('@')[0]
+    const displayName = emailPrefix
+      .split(/[._-]/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+    const user = {
+      ...baseUser,
+      name: displayName || baseUser.name,
       email,
     }
     const token = `mock_token_${Date.now()}`
     localStorage.setItem('lagvoice_token', token)
+    localStorage.setItem('lagvoice_user', JSON.stringify(user))
     return { user, token }
   },
 

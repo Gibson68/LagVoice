@@ -1,11 +1,13 @@
 /**
  * TicketList — Student Ticket Tracking
  * Filterable list, status badges, search, navigation to detail
+ * Dark mode support via shared useDarkMode hook
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 const MOCK_TICKETS = [
   { id: 42, trackingId: 'UNILAG-00042', title: 'Broken AC in Lecture Hall B', status: 'under_review', category: 'Infrastructure', urgency: 'high', createdAt: new Date(Date.now() - 3600000).toISOString() },
@@ -22,6 +24,7 @@ const CATEGORY_FILTERS = ['all', 'Academic', 'Infrastructure', 'Admin', 'General
 
 export default function TicketList() {
   const navigate = useNavigate()
+  const dark = useDarkMode()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -33,24 +36,34 @@ export default function TicketList() {
     return matchSearch && matchStatus && matchCategory
   })
 
+  const text1 = dark ? 'text-white' : 'text-ink'
+  const text2 = dark ? 'text-slate-300' : 'text-ink/40'
+  const text3 = dark ? 'text-slate-400' : 'text-ink/25'
+  const card = dark ? 'bg-[#1e293b]' : 'bg-paper'
+  const cardBorder = dark ? 'border-white/6' : 'border-mist/50'
+  const hoverBg = dark ? 'hover:border-white/10 hover:bg-white/5' : 'hover:border-maroon/15 hover:shadow-[0_4px_16px_rgba(128,0,0,0.04)]'
+  const inputBg = dark ? 'bg-[#0f172a] border-white/8 text-white placeholder:text-slate-500' : 'bg-white border-mist/80 text-ink placeholder:text-ink/25'
+  const filterActive = dark ? 'bg-[#1266f1] text-white' : 'bg-maroon text-white'
+  const filterInactive = dark ? 'bg-[#1e293b] border border-white/8 text-slate-400' : 'bg-paper border border-mist/50 text-ink/40'
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-[1.8rem] font-bold text-ink tracking-tight">My Tickets</h1>
-        <p className="text-[14px] text-ink/40 mt-1">Track all your submitted feedback</p>
+        <h1 className={`text-[1.8rem] font-bold ${text1} tracking-tight`}>My Tickets</h1>
+        <p className={`text-[14px] ${text2} mt-1`}>Track all your submitted feedback</p>
       </div>
 
       {/* Search */}
       <div className="relative mb-4">
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <svg className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${dark ? 'text-slate-500' : 'text-ink/20'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by title or tracking ID..."
-          className="w-full pl-11 pr-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+          className={`w-full pl-11 pr-4 py-3 text-[14px] rounded-xl border ${inputBg} focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.04)]`}
         />
       </div>
 
@@ -63,9 +76,7 @@ export default function TicketList() {
               key={s}
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all ${
-                statusFilter === s
-                  ? 'bg-maroon text-white shadow-sm'
-                  : 'bg-paper border border-mist/50 text-ink/40 hover:text-ink/60'
+                statusFilter === s ? filterActive : filterInactive
               }`}
             >
               {s === 'all' ? 'All' : config?.label || s}
@@ -82,8 +93,8 @@ export default function TicketList() {
             onClick={() => setCategoryFilter(c)}
             className={`px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all ${
               categoryFilter === c
-                ? 'bg-gold/10 text-gold-dark border border-gold/20'
-                : 'bg-paper border border-mist/50 text-ink/40 hover:text-ink/60'
+                ? dark ? 'bg-[#ffa900]/20 text-[#ffa900] border border-[#ffa900]/30' : 'bg-gold/10 text-gold-dark border border-gold/20'
+                : filterInactive
             }`}
           >
             {c === 'all' ? 'All Categories' : c}
@@ -95,7 +106,7 @@ export default function TicketList() {
       <div className="space-y-2">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-[14px] text-ink/30">No tickets match your filters</p>
+            <p className={`text-[14px] ${text2}`}>No tickets match your filters</p>
           </div>
         ) : (
           filtered.map(ticket => {
@@ -104,16 +115,16 @@ export default function TicketList() {
               <button
                 key={ticket.id}
                 onClick={() => navigate(`/student/ticket/${ticket.id}`)}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl bg-paper border border-mist/50 hover:border-maroon/15 hover:shadow-[0_4px_16px_rgba(128,0,0,0.04)] transition-all text-left group"
+                className={`w-full flex items-center gap-4 p-4 rounded-2xl ${card} border ${cardBorder} ${hoverBg} transition-all text-left group`}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-mono text-ink/25">{ticket.trackingId}</span>
-                    <span className="text-[10px] text-ink/15">·</span>
-                    <span className="text-[10px] text-ink/25">{ticket.category}</span>
+                    <span className={`text-[10px] font-mono ${text3}`}>{ticket.trackingId}</span>
+                    <span className={`text-[10px] ${text3}/15`}>·</span>
+                    <span className={`text-[10px] ${text3}`}>{ticket.category}</span>
                   </div>
-                  <p className="text-[14px] font-semibold text-ink truncate group-hover:text-maroon transition-colors">{ticket.title}</p>
-                  <p className="text-[11px] text-ink/25 mt-1">{formatRelativeTime(ticket.createdAt)}</p>
+                  <p className={`text-[14px] font-semibold ${text1} truncate group-hover:text-[#1266f1] transition-colors`}>{ticket.title}</p>
+                  <p className={`text-[11px] ${text3} mt-1`}>{formatRelativeTime(ticket.createdAt)}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                   <span
@@ -123,7 +134,7 @@ export default function TicketList() {
                     {status?.label}
                   </span>
                   {ticket.urgency === 'high' && (
-                    <span className="text-[9px] font-bold text-escalated uppercase tracking-wider">Urgent</span>
+                    <span className="text-[9px] font-bold text-[#D32F2F] uppercase tracking-wider">Urgent</span>
                   )}
                 </div>
               </button>

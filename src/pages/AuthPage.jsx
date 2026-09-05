@@ -81,8 +81,8 @@ function StatsCard() {
       }} />
       <div className="relative z-10">
         <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-3">Campus Impact</p>
-        <p className="text-[2rem] font-bold font-mono leading-none">1,823</p>
-        <p className="text-[11px] text-white/40 mt-1.5">Complaints resolved this year</p>
+        <p className="text-[2rem] font-bold font-mono leading-none">47</p>
+        <p className="text-[11px] text-white/40 mt-1.5">Complaints resolved so far</p>
         <div className="mt-4 flex items-center gap-1.5">
           <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold text-[10px] font-semibold">48h</span>
           <span className="text-[10px] text-white/30">avg response</span>
@@ -129,12 +129,12 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#F5F0EB] via-[#FAF8F3] to-[#F0EDE8]">
       {/* ─── Left Panel: Auth Form ─── */}
-      <div className="flex-1 flex items-center justify-center p-8 sm:p-10 lg:p-12 min-h-screen">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-10 min-h-screen overflow-y-auto">
         <div className="w-full max-w-[420px]">
           {/* Back to Home */}
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-[13px] text-ink/40 hover:text-ink/70 font-medium transition-colors mb-8 group"
+            className="flex items-center gap-2 text-[13px] text-ink/40 hover:text-ink/70 font-medium transition-colors mb-5 group"
             aria-label="Back to home page"
           >
             <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -144,7 +144,7 @@ export default function AuthPage() {
           </button>
 
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-10 sm:mb-12">
+          <div className="flex items-center gap-3 mb-6 sm:mb-8">
             <img src="/images/logo-n.png" alt="LagVoice" className="w-12 h-12 rounded-xl object-cover shadow-[0_2px_8px_rgba(128,0,0,0.15)]" />
             <div>
               <span className="text-ink font-bold text-lg tracking-tight">LagVoice</span>
@@ -161,14 +161,14 @@ export default function AuthPage() {
                 : 'opacity-0 translate-y-4 scale-[0.98] absolute inset-0 pointer-events-none'
             }`}
           >
-            <h1 className="text-[1.8rem] sm:text-[2rem] lg:text-[2.5rem] text-ink font-bold leading-[1.1] tracking-tight mb-2">
+            <h1 className="text-[1.6rem] sm:text-[1.8rem] lg:text-[2.2rem] text-ink font-bold leading-[1.1] tracking-tight mb-1.5">
               Welcome<br />back<span className="text-maroon">.</span>
             </h1>
-            <p className="text-ink/40 text-[14px] sm:text-[15px] mb-8 sm:mb-10 leading-relaxed">
+            <p className="text-ink/40 text-[13px] sm:text-[14px] mb-5 sm:mb-6 leading-relaxed">
               Sign in to access the UNILAG Quality Assurance platform.
             </p>
 
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleLogin} className="space-y-3.5">
               {/* Role */}
               <div>
                 <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">
@@ -179,7 +179,7 @@ export default function AuthPage() {
                     name="role"
                     value={form.role}
                     onChange={handleChange}
-                    className="w-full px-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 appearance-none cursor-pointer
                       bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
@@ -209,7 +209,7 @@ export default function AuthPage() {
                     value={form.email}
                     onChange={handleChange}
                     required
-                    className="w-full pl-11 pr-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    className="w-full pl-11 pr-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       placeholder:text-ink/25
                       focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
@@ -241,7 +241,7 @@ export default function AuthPage() {
                     value={form.password}
                     onChange={handleChange}
                     required
-                    className="w-full pl-11 pr-11 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    className="w-full pl-11 pr-11 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       placeholder:text-ink/25
                       focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
@@ -301,7 +301,7 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 rounded-xl bg-maroon text-white font-semibold text-[15px]
+                className="w-full py-3.5 rounded-xl bg-maroon text-white font-semibold text-[14px]
                   shadow-[0_4px_14px_rgba(128,0,0,0.25)] hover:shadow-[0_8px_25px_rgba(128,0,0,0.35)]
                   hover:bg-maroon-dark active:bg-maroon-deep active:scale-[0.98]
                   transition-all duration-300 ease-out
@@ -322,7 +322,7 @@ export default function AuthPage() {
             </form>
 
             {/* Divider */}
-            <div className="relative my-7">
+            <div className="relative my-5">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-mist/50" /></div>
               <div className="relative flex justify-center">
                 <span className="bg-[#F5F0EB] px-3 text-[11px] text-ink/25 uppercase tracking-[0.15em] font-medium">or</span>
@@ -332,7 +332,7 @@ export default function AuthPage() {
             {/* SSO */}
             <button
               type="button"
-              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 border border-mist/70 rounded-xl
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-mist/70 rounded-xl
                 text-[14px] text-ink/50 hover:text-ink hover:border-ink/15 hover:bg-white hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)]
                 transition-all duration-200 font-medium group"
             >
@@ -343,7 +343,7 @@ export default function AuthPage() {
             </button>
 
             {/* Sign up link */}
-            <p className="mt-8 text-center text-[14px] text-ink/35">
+            <p className="mt-5 text-center text-[13px] text-ink/35">
               Don't have an account?{' '}
               <button
                 type="button"
@@ -366,52 +366,52 @@ export default function AuthPage() {
                 : 'opacity-0 translate-y-4 scale-[0.98] absolute inset-0 pointer-events-none'
             }`}
           >
-            <h1 className="text-[1.8rem] sm:text-[2rem] lg:text-[2.5rem] text-ink font-bold leading-[1.1] tracking-tight mb-2">
+            <h1 className="text-[1.6rem] sm:text-[1.8rem] lg:text-[2.2rem] text-ink font-bold leading-[1.1] tracking-tight mb-1.5">
               Join the<br />conversation<span className="text-gold">.</span>
             </h1>
-            <p className="text-ink/40 text-[14px] sm:text-[15px] mb-8 sm:mb-10 leading-relaxed">
+            <p className="text-ink/40 text-[13px] sm:text-[14px] mb-5 sm:mb-6 leading-relaxed">
               Create your account to start making a difference at UNILAG.
             </p>
 
-            <form onSubmit={handleRegister} className="space-y-4 sm:space-y-4.5">
+            <form onSubmit={handleRegister} className="space-y-3 sm:space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">First Name</label>
+                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">First Name</label>
                   <input name="firstName" placeholder="Chidinma" value={form.firstName} onChange={handleChange} required
-                    className="w-full px-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">Last Name</label>
+                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Last Name</label>
                   <input name="lastName" placeholder="Okafor" value={form.lastName} onChange={handleChange} required
-                    className="w-full px-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">Email Address</label>
+                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Email Address</label>
                 <input name="email" type="email" placeholder="you@student.unilag.edu.ng" value={form.email} onChange={handleChange} required
-                  className="w-full px-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                     placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                     transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">Student / Staff ID</label>
+                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Student / Staff ID</label>
                 <input name="studentId" placeholder="e.g., 2021/12345" value={form.studentId} onChange={handleChange} required
-                  className="w-full px-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                     placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                     transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">Role</label>
+                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Role</label>
                   <select name="role" value={form.role} onChange={handleChange}
-                    className="w-full px-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]
                       bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
@@ -421,9 +421,9 @@ export default function AuthPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">Department</label>
+                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Department</label>
                   <select name="department" value={form.department} onChange={handleChange} required
-                    className="w-full px-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]
                       bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
@@ -435,7 +435,7 @@ export default function AuthPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">Password</label>
+                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Password</label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                     <svg className="w-4 h-4 text-ink/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -443,16 +443,16 @@ export default function AuthPage() {
                     </svg>
                   </div>
                   <input name="password" type="password" placeholder="Create a strong password" value={form.password} onChange={handleChange} required
-                    className="w-full pl-11 pr-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    className="w-full pl-11 pr-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2">Confirm Password</label>
+                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Confirm Password</label>
                 <input name="confirmPassword" type="password" placeholder="Confirm your password" value={form.confirmPassword} onChange={handleChange} required
-                  className="w-full px-4 py-3.5 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                     placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                     transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
               </div>
@@ -485,7 +485,7 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 rounded-xl bg-maroon text-white font-semibold text-[15px]
+                className="w-full py-3.5 rounded-xl bg-maroon text-white font-semibold text-[14px]
                   shadow-[0_4px_14px_rgba(128,0,0,0.25)] hover:shadow-[0_8px_25px_rgba(128,0,0,0.35)]
                   hover:bg-maroon-dark active:bg-maroon-deep active:scale-[0.98]
                   transition-all duration-300 ease-out
@@ -505,7 +505,7 @@ export default function AuthPage() {
               </button>
             </form>
 
-            <p className="mt-7 text-center text-[14px] text-ink/35">
+            <p className="mt-5 text-center text-[13px] text-ink/35">
               Already have an account?{' '}
               <button
                 type="button"

@@ -1,14 +1,15 @@
 /**
  * TicketDetail — Full ticket view with intelligent tracking pipeline
  * Complaint lifecycle adapts based on category and current stage
+ * Dark mode support via shared useDarkMode hook
  */
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 // ── Intelligent Pipeline Steps ──
-// The full pipeline adapts based on complaint category
 const FULL_PIPELINE = [
   { key: 'submitted', label: 'Complaint Submitted', description: 'Your feedback has been received and assigned a tracking ID.' },
   { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERICOM/QA office has acknowledged your complaint.' },
@@ -20,7 +21,6 @@ const FULL_PIPELINE = [
   { key: 'resolved', label: 'Resolved', description: 'The issue has been resolved. You can reopen this ticket if the problem persists.' },
 ]
 
-// Pipeline varies by category - some categories skip DSA and go directly to the department
 const CATEGORY_PIPELINES = {
   infrastructure: FULL_PIPELINE,
   academic: [
@@ -56,14 +56,12 @@ const CATEGORY_PIPELINES = {
   ],
 }
 
-// Map timeline steps to status keys for progress calculation
 function getProgressPercent(currentStatus, pipeline) {
   const idx = pipeline.findIndex(s => s.key === currentStatus)
   if (idx === -1) return 0
   return Math.round(((idx + 1) / pipeline.length) * 100)
 }
 
-// Mock ticket data - will be loaded from localStorage or fallback
 const MOCK_TICKET = {
   id: 42,
   trackingId: 'UNILAG-00042',
@@ -93,7 +91,7 @@ const MOCK_COMMENTS = [
   { id: 2, author: 'DSA Office', role: 'admin', text: 'The complaint has been reviewed and forwarded to the Works and Maintenance department. They will conduct an on-site inspection within 48 hours.', time: new Date(Date.now() - 3600000 * 12).toISOString() },
 ]
 
-function PipelineIcon({ step, isDone, isCurrent }) {
+function PipelineIcon({ isDone, isCurrent }) {
   if (isDone) {
     return (
       <div className="w-8 h-8 rounded-full bg-[#00b74a]/15 flex items-center justify-center shrink-0">
@@ -111,7 +109,7 @@ function PipelineIcon({ step, isDone, isCurrent }) {
     )
   }
   return (
-    <div className="w-8 h-8 rounded-full bg-[#E4E8EE] flex items-center justify-center shrink-0">
+    <div className="w-8 h-8 rounded-full bg-[#E4E8EE] dark:bg-white/10 flex items-center justify-center shrink-0">
       <div className="w-2 h-2 rounded-full bg-[#9fa6b2]/40" />
     </div>
   )
@@ -120,15 +118,23 @@ function PipelineIcon({ step, isDone, isCurrent }) {
 export default function TicketDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const dark = useDarkMode()
   const [comment, setComment] = useState('')
   const [comments, setComments] = useState(MOCK_COMMENTS)
 
-  // Determine pipeline based on category
   const ticket = MOCK_TICKET
   const pipeline = CATEGORY_PIPELINES[ticket.categoryId] || CATEGORY_PIPELINES.infrastructure
   const currentStepIdx = pipeline.findIndex(s => s.key === ticket.status)
   const progress = getProgressPercent(ticket.status, pipeline)
   const status = TICKET_STATUS_CONFIG[ticket.status]
+
+  const card = dark ? 'bg-[#1e293b]' : 'bg-white'
+  const cardBorder = dark ? 'border-white/6' : 'border-[#E4E8EE]'
+  const text1 = dark ? 'text-white' : 'text-[#262626]'
+  const text2 = dark ? 'text-slate-300' : 'text-[#4f4f4f]'
+  const text3 = dark ? 'text-slate-400' : 'text-[#9fa6b2]'
+  const subtle = dark ? 'bg-white/5' : 'bg-[#F5F7FA]'
+  const hoverBg = dark ? 'hover:bg-white/5' : 'hover:bg-[#F5F7FA]'
 
   const addComment = () => {
     if (!comment.trim()) return
@@ -145,7 +151,7 @@ export default function TicketDetail() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Back */}
-      <button onClick={() => navigate('/student/tickets')} className="flex items-center gap-2 text-[13px] text-[#9fa6b2] hover:text-[#262626] mb-6 transition-colors">
+      <button onClick={() => navigate('/student/tickets')} className={`flex items-center gap-2 text-[13px] ${text3} hover:${text1} mb-6 transition-colors`}>
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -153,11 +159,11 @@ export default function TicketDetail() {
       </button>
 
       {/* Ticket Header */}
-      <div className="bg-white rounded-2xl border border-[#E4E8EE] p-6 mb-4">
+      <div className={`${card} rounded-2xl border ${cardBorder} p-6 mb-4`}>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <span className="text-[10px] font-mono text-[#9fa6b2]">{ticket.trackingId}</span>
-            <h1 className="text-[1.3rem] font-bold text-[#262626] mt-1">{ticket.title}</h1>
+            <span className={`text-[10px] font-mono ${text3}`}>{ticket.trackingId}</span>
+            <h1 className={`text-[1.3rem] font-bold ${text1} mt-1`}>{ticket.title}</h1>
           </div>
           <span
             className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-[0.08em]"
@@ -169,39 +175,34 @@ export default function TicketDetail() {
 
         {/* Progress bar */}
         <div className="mb-4">
-          <div className="flex items-center justify-between text-[10px] text-[#9fa6b2] mb-1.5">
+          <div className={`flex items-center justify-between text-[10px] ${text3} mb-1.5`}>
             <span>Progress</span>
             <span className="font-mono">{progress}%</span>
           </div>
-          <div className="h-1.5 bg-[#E4E8EE] rounded-full overflow-hidden">
+          <div className={`h-1.5 ${subtle} rounded-full overflow-hidden`}>
             <div className="h-full bg-gradient-to-r from-[#1266f1] to-[#00b74a] rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-[12px]">
-          <div className="bg-[#F5F7FA] rounded-xl p-3">
-            <p className="text-[10px] text-[#9fa6b2] uppercase tracking-wider font-semibold mb-0.5">Category</p>
-            <p className="text-[13px] font-semibold text-[#262626]">{ticket.category}</p>
-          </div>
-          <div className="bg-[#F5F7FA] rounded-xl p-3">
-            <p className="text-[10px] text-[#9fa6b2] uppercase tracking-wider font-semibold mb-0.5">Subcategory</p>
-            <p className="text-[13px] font-semibold text-[#262626]">{ticket.subcategory}</p>
-          </div>
-          <div className="bg-[#F5F7FA] rounded-xl p-3">
-            <p className="text-[10px] text-[#9fa6b2] uppercase tracking-wider font-semibold mb-0.5">Location</p>
-            <p className="text-[13px] font-semibold text-[#262626]">{ticket.location || 'Not specified'}</p>
-          </div>
-          <div className="bg-[#F5F7FA] rounded-xl p-3">
-            <p className="text-[10px] text-[#9fa6b2] uppercase tracking-wider font-semibold mb-0.5">Submitted</p>
-            <p className="text-[13px] font-semibold text-[#262626]">{formatRelativeTime(ticket.createdAt)}</p>
-          </div>
+          {[
+            { label: 'Category', value: ticket.category },
+            { label: 'Subcategory', value: ticket.subcategory },
+            { label: 'Location', value: ticket.location || 'Not specified' },
+            { label: 'Submitted', value: formatRelativeTime(ticket.createdAt) },
+          ].map(item => (
+            <div key={item.label} className={`${subtle} rounded-xl p-3`}>
+              <p className={`text-[10px] ${text3} uppercase tracking-wider font-semibold mb-0.5`}>{item.label}</p>
+              <p className={`text-[13px] font-semibold ${text1}`}>{item.value}</p>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* ═══ Interactive Tracking Pipeline ═══ */}
-      <div className="bg-white rounded-2xl border border-[#E4E8EE] p-6 mb-4">
+      <div className={`${card} rounded-2xl border ${cardBorder} p-6 mb-4`}>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-[15px] font-bold text-[#262626]">Tracking Pipeline</h2>
+          <h2 className={`text-[15px] font-bold ${text1}`}>Tracking Pipeline</h2>
           <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-[#1266f1]/10 text-[#1266f1]">
             Step {currentStepIdx + 1} of {pipeline.length}
           </span>
@@ -216,29 +217,28 @@ export default function TicketDetail() {
 
             return (
               <div key={step.key} className="flex gap-3 relative">
-                {/* Vertical connector line */}
                 {i < pipeline.length - 1 && (
-                  <div className={`absolute left-[15px] top-[32px] w-[2px] h-[calc(100%-8px)] ${isDone ? 'bg-[#00b74a]/30' : isCurrent ? 'bg-[#1266f1]/20' : 'bg-[#E4E8EE]'}`} />
+                  <div className={`absolute left-[15px] top-[32px] w-[2px] h-[calc(100%-8px)] ${isDone ? 'bg-[#00b74a]/30' : isCurrent ? 'bg-[#1266f1]/20' : dark ? 'bg-white/10' : 'bg-[#E4E8EE]'}`} />
                 )}
 
-                <PipelineIcon step={step.key} isDone={isDone} isCurrent={isCurrent} />
+                <PipelineIcon isDone={isDone} isCurrent={isCurrent} />
 
                 <div className={`flex-1 pb-5 ${isFuture ? 'opacity-40' : ''}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className={`text-[13px] font-semibold ${isCurrent ? 'text-[#1266f1]' : isDone ? 'text-[#262626]' : 'text-[#9fa6b2]'}`}>
+                      <p className={`text-[13px] font-semibold ${isCurrent ? 'text-[#1266f1]' : isDone ? text1 : text3}`}>
                         {step.label}
                       </p>
-                      <p className={`text-[11px] mt-0.5 leading-relaxed ${isDone || isCurrent ? 'text-[#9fa6b2]' : 'text-[#9fa6b2]/50'}`}>
+                      <p className={`text-[11px] mt-0.5 leading-relaxed ${isDone || isCurrent ? text3 : `${text3}/50`}`}>
                         {step.description}
                       </p>
                     </div>
                   </div>
                   {timelineEntry && (
                     <div className="flex items-center gap-2 mt-1.5">
-                      <span className="text-[10px] text-[#9fa6b2] font-mono">{formatRelativeTime(timelineEntry.time)}</span>
-                      <span className="text-[10px] text-[#9fa6b2]/40">&middot;</span>
-                      <span className="text-[10px] text-[#9fa6b2]">by {timelineEntry.by}</span>
+                      <span className={`text-[10px] ${text3} font-mono`}>{formatRelativeTime(timelineEntry.time)}</span>
+                      <span className={`text-[10px] ${text3}/40`}>·</span>
+                      <span className={`text-[10px] ${text3}`}>by {timelineEntry.by}</span>
                     </div>
                   )}
                   {isCurrent && (
@@ -255,11 +255,11 @@ export default function TicketDetail() {
       </div>
 
       {/* Description */}
-      <div className="bg-white rounded-2xl border border-[#E4E8EE] p-6 mb-4">
-        <h2 className="text-[15px] font-bold text-[#262626] mb-3">Description</h2>
-        <p className="text-[14px] text-[#4f4f4f] leading-relaxed">{ticket.description}</p>
+      <div className={`${card} rounded-2xl border ${cardBorder} p-6 mb-4`}>
+        <h2 className={`text-[15px] font-bold ${text1} mb-3`}>Description</h2>
+        <p className={`text-[14px] ${text2} leading-relaxed`}>{ticket.description}</p>
         {ticket.gpsLat && ticket.gpsLng && (
-          <div className="mt-3 flex items-center gap-2 text-[12px] text-[#9fa6b2]">
+          <div className={`mt-3 flex items-center gap-2 text-[12px] ${text3}`}>
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -278,8 +278,8 @@ export default function TicketDetail() {
       </div>
 
       {/* Comments */}
-      <div className="bg-white rounded-2xl border border-[#E4E8EE] p-6 mb-4">
-        <h2 className="text-[15px] font-bold text-[#262626] mb-4">Comments & Updates</h2>
+      <div className={`${card} rounded-2xl border ${cardBorder} p-6 mb-4`}>
+        <h2 className={`text-[15px] font-bold ${text1} mb-4`}>Comments & Updates</h2>
         <div className="space-y-4 mb-4">
           {comments.map(c => (
             <div key={c.id} className={`flex gap-3 ${c.role === 'student' ? 'flex-row-reverse' : ''}`}>
@@ -290,11 +290,11 @@ export default function TicketDetail() {
               </div>
               <div className={`max-w-[80%] ${c.role === 'student' ? 'text-right' : ''}`}>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[12px] font-semibold text-[#262626]">{c.author}</span>
-                  <span className="text-[10px] text-[#9fa6b2] font-mono">{formatRelativeTime(c.time)}</span>
+                  <span className={`text-[12px] font-semibold ${text1}`}>{c.author}</span>
+                  <span className={`text-[10px] ${text3} font-mono`}>{formatRelativeTime(c.time)}</span>
                 </div>
-                <div className={`text-[13px] text-[#4f4f4f] leading-relaxed rounded-xl p-3 ${
-                  c.role === 'admin' ? 'bg-[#F5F7FA] text-left' : 'bg-[#1266f1]/[0.05] text-left'
+                <div className={`text-[13px] ${text2} leading-relaxed rounded-xl p-3 ${
+                  c.role === 'admin' ? `${subtle} text-left` : 'bg-[#1266f1]/[0.05] text-left'
                 }`}>
                   {c.text}
                 </div>
@@ -304,13 +304,13 @@ export default function TicketDetail() {
         </div>
 
         {/* Add Comment */}
-        <div className="flex gap-2 pt-3 border-t border-[#E4E8EE]">
+        <div className={`flex gap-2 pt-3 border-t ${cardBorder}`}>
           <input
             value={comment}
             onChange={e => setComment(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addComment()}
             placeholder="Add a comment or follow-up..."
-            className="flex-1 px-4 py-2.5 rounded-xl bg-[#F5F7FA] border border-[#E4E8EE] text-[13px] text-[#262626] placeholder:text-[#9fa6b2] focus:outline-none focus:ring-2 focus:ring-[#1266f1]/15 focus:border-[#1266f1]/40 transition-all"
+            className={`flex-1 px-4 py-2.5 rounded-xl ${subtle} border ${cardBorder} text-[13px] ${text1} placeholder:${text3} focus:outline-none focus:ring-2 focus:ring-[#1266f1]/15 focus:border-[#1266f1]/40 transition-all`}
           />
           <button
             onClick={addComment}
@@ -324,7 +324,7 @@ export default function TicketDetail() {
 
       {/* Actions */}
       {ticket.status === 'resolved' && (
-        <button className="w-full py-3 rounded-xl border border-[#E4E8EE] text-[#4f4f4f] font-semibold text-[14px] hover:bg-[#F5F7FA] transition-all flex items-center justify-center gap-2">
+        <button className={`w-full py-3 rounded-xl border ${cardBorder} ${text2} font-semibold text-[14px] ${hoverBg} transition-all flex items-center justify-center gap-2`}>
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>

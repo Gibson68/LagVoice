@@ -24,6 +24,7 @@ const AdminComplaints = lazy(() => import('./pages/AdminComplaints'))
 const AdminPolls = lazy(() => import('./pages/AdminPolls'))
 const AdminReports = lazy(() => import('./pages/AdminReports'))
 const StudentPolls = lazy(() => import('./pages/StudentPolls'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 
 // Loading fallback
 function PageLoader() {
@@ -112,7 +113,7 @@ export default function App() {
           path="/student/profile"
           element={
             <ProtectedRoute allowedRoles={['student']}>
-              <StudentLayout><PlaceholderPage title="Profile" /></StudentLayout>
+              <StudentLayout><ProfilePage /></StudentLayout>
             </ProtectedRoute>
           }
         />

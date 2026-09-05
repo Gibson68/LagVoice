@@ -84,7 +84,7 @@ function Navbar() {
       }`}>
         <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <img src="/images/logo-n.png" alt="LagVoice" className="w-11 h-11 rounded-xl object-cover" />
+            <img src="/images/logo-n.png" alt="LagVoice" className="w-9 h-9 rounded-lg object-cover" />
             <span className={`font-bold text-[17px] tracking-tight transition-colors duration-300 ${scrolled ? 'text-ink' : 'text-white'}`}>
               LagVoice
             </span>
@@ -391,10 +391,10 @@ export default function LandingPage() {
 
           {/* Stats charts at bottom of hero */}
           <div className="mt-16 lg:mt-24 pt-8 border-t border-white/10 grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 animate-fade-in-up" style={{ animationDelay: '0.45s' }}>
-            <DonutStat value={1823} total={2200} color="#ffa900" label="Complaints Resolved" />
+            <DonutStat value={47} total={120} color="#ffa900" label="Complaints Resolved" />
             <DonutStat value={78} total={100} color="#00b74a" label="Satisfaction Rate" suffix="%" />
-            <BarStat data={[{v:35},{v:52},{v:48},{v:60},{v:44},{v:48},{v:38}]} color="#ffa900" label="Avg. Response Time" />
-            <DonutStat value={15} total={20} color="#b23cfd" label="Departments Covered" />
+            <BarStat data={[{v:8},{v:12},{v:10},{v:15},{v:11},{v:9},{v:7}]} color="#ffa900" label="Avg. Response Time" />
+            <DonutStat value={6} total={14} color="#b23cfd" label="Departments Covered" />
           </div>
         </div>
 
@@ -581,10 +581,10 @@ export default function LandingPage() {
             </div>
           </Reveal>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-            <DonutStat value={1823} total={2200} color="#ffa900" label="Complaints Resolved" />
+            <DonutStat value={47} total={120} color="#ffa900" label="Complaints Resolved" />
             <DonutStat value={78} total={100} color="#00b74a" label="Satisfaction Rate" suffix="%" />
-            <BarStat data={[{v:35},{v:52},{v:48},{v:60},{v:44},{v:48},{v:38}]} color="#ffa900" label="Avg. Response Time" />
-            <DonutStat value={15} total={20} color="#b23cfd" label="Departments Covered" />
+            <BarStat data={[{v:8},{v:12},{v:10},{v:15},{v:11},{v:9},{v:7}]} color="#ffa900" label="Avg. Response Time" />
+            <DonutStat value={6} total={14} color="#b23cfd" label="Departments Covered" />
           </div>
         </div>
       </section>
