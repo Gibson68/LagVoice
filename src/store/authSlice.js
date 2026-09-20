@@ -1,12 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { authService } from '../services/authService'
+import { getProfile, hasSession } from '../services/userService'
+import { readRaw, STORAGE_KEYS } from '../utils/storage'
 
 // Async thunks
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async ({ email, password, role }, { rejectWithValue }) => {
+  async ({ email, password, role, staffCategory }, { rejectWithValue }) => {
     try {
-      const response = await authService.login(email, password, role)
+      const response = await authService.login(email, password, role, staffCategory)
       return response
     } catch (error) {
       return rejectWithValue(error.message || 'Login failed')
@@ -26,7 +28,7 @@ export const registerUser = createAsyncThunk(
   }
 )
 
-const initialState = {
+const emptyState = {
   user: null,
   token: null,
   isAuthenticated: false,
@@ -35,6 +37,26 @@ const initialState = {
   error: null,
   registrationStep: 1,
 }
+
+/** Rehydrate a session from the last visit so a refresh keeps you signed in. */
+function restoreState() {
+  try {
+    if (!hasSession()) return emptyState
+    const user = getProfile()
+    if (!user?.email) return emptyState
+    return {
+      ...emptyState,
+      user,
+      token: readRaw(STORAGE_KEYS.token),
+      role: user.role,
+      isAuthenticated: true,
+    }
+  } catch {
+    return emptyState
+  }
+}
+
+const initialState = restoreState()
 
 const authSlice = createSlice({
   name: 'auth',
@@ -84,9 +106,14 @@ const authSlice = createSlice({
         state.loading = true
         state.error = null
       })
-      .addCase(registerUser.fulfilled, (state) => {
+      .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false
         state.registrationStep = 1
+        // Registering signs you in: the account record is already persisted.
+        state.user = action.payload.user
+        state.token = action.payload.token
+        state.role = action.payload.user?.role || null
+        state.isAuthenticated = Boolean(action.payload.token)
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
 import { useDarkMode } from '../hooks/useDarkMode'
+import StatusPill from '../components/common/StatusPill/StatusPill'
 
 const MOCK_TICKETS = [
   { id: 42, trackingId: 'UNILAG-00042', title: 'Broken AC in Lecture Hall B', status: 'under_review', category: 'Infrastructure', urgency: 'high', createdAt: new Date(Date.now() - 3600000).toISOString() },
@@ -36,15 +37,15 @@ export default function TicketList() {
     return matchSearch && matchStatus && matchCategory
   })
 
-  const text1 = dark ? 'text-white' : 'text-ink'
-  const text2 = dark ? 'text-slate-300' : 'text-ink/40'
-  const text3 = dark ? 'text-slate-400' : 'text-ink/25'
-  const card = dark ? 'bg-[#1e293b]' : 'bg-paper'
-  const cardBorder = dark ? 'border-white/6' : 'border-mist/50'
-  const hoverBg = dark ? 'hover:border-white/10 hover:bg-white/5' : 'hover:border-maroon/15 hover:shadow-[0_4px_16px_rgba(128,0,0,0.04)]'
-  const inputBg = dark ? 'bg-[#0f172a] border-white/8 text-white placeholder:text-slate-500' : 'bg-white border-mist/80 text-ink placeholder:text-ink/25'
-  const filterActive = dark ? 'bg-[#1266f1] text-white' : 'bg-maroon text-white'
-  const filterInactive = dark ? 'bg-[#1e293b] border border-white/8 text-slate-400' : 'bg-paper border border-mist/50 text-ink/40'
+  const text1 = dark ? 'text-white' : 'text-[#262626]'
+  const text2 = dark ? 'text-slate-300' : 'text-[#4f4f4f]'
+  const text3 = dark ? 'text-slate-400' : 'text-[#9fa6b2]'
+  const card = dark ? 'bg-[#1e293b]' : 'bg-white'
+  const cardBorder = dark ? 'border-white/10' : 'border-[#E4E8EE]'
+  const hoverBg = dark ? 'hover:border-white/20 hover:bg-white/5' : 'hover:border-[#1266f1]/20 hover:shadow-[0_4px_16px_rgba(18,102,241,0.06)]'
+  const inputBg = dark ? 'bg-[#0f172a] border-white/10 text-white placeholder:text-slate-500' : 'bg-white border-[#E4E8EE] text-[#262626] placeholder:text-[#9fa6b2]'
+  const filterActive = dark ? 'bg-[#1266f1] text-white' : 'bg-[#1266f1] text-white'
+  const filterInactive = dark ? 'bg-[#1e293b] border border-white/10 text-slate-400' : 'bg-white border border-[#E4E8EE] text-[#4f4f4f]'
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -63,12 +64,12 @@ export default function TicketList() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by title or tracking ID..."
-          className={`w-full pl-11 pr-4 py-3 text-[14px] rounded-xl border ${inputBg} focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.04)]`}
+          className={`w-full pl-11 pr-4 py-3 text-[14px] rounded-xl border ${inputBg} focus:outline-none focus:ring-2 focus:ring-[#1266f1]/20 focus:border-[#1266f1]/40 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.04)]`}
         />
       </div>
 
       {/* Status Filters */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+      <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
         {STATUS_FILTERS.map(s => {
           const config = s === 'all' ? null : TICKET_STATUS_CONFIG[s]
           return (
@@ -86,18 +87,17 @@ export default function TicketList() {
       </div>
 
       {/* Category Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+      <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
         {CATEGORY_FILTERS.map(c => (
           <button
             key={c}
             onClick={() => setCategoryFilter(c)}
             className={`px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all ${
               categoryFilter === c
-                ? dark ? 'bg-[#ffa900]/20 text-[#ffa900] border border-[#ffa900]/30' : 'bg-gold/10 text-gold-dark border border-gold/20'
+                ? 'bg-[#ffa900]/15 text-[#cc8800] border border-[#ffa900]/30 dark:text-[#ffa900]'
                 : filterInactive
             }`}
-          >
-            {c === 'all' ? 'All Categories' : c}
+          >              {c === 'all' ? 'All categories' : c}
           </button>
         ))}
       </div>
@@ -120,19 +120,14 @@ export default function TicketList() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`text-[10px] font-mono ${text3}`}>{ticket.trackingId}</span>
-                    <span className={`text-[10px] ${text3}/15`}>·</span>
+                    <span className={`text-[10px] ${dark ? 'text-slate-600' : 'text-[#9fa6b2]/40'}`}>·</span>
                     <span className={`text-[10px] ${text3}`}>{ticket.category}</span>
                   </div>
                   <p className={`text-[14px] font-semibold ${text1} truncate group-hover:text-[#1266f1] transition-colors`}>{ticket.title}</p>
                   <p className={`text-[11px] ${text3} mt-1`}>{formatRelativeTime(ticket.createdAt)}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <span
-                    className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-[0.08em]"
-                    style={{ color: status?.color, backgroundColor: status?.bgColor }}
-                  >
-                    {status?.label}
-                  </span>
+                  <StatusPill status={status} />
                   {ticket.urgency === 'high' && (
                     <span className="text-[9px] font-bold text-[#D32F2F] uppercase tracking-wider">Urgent</span>
                   )}

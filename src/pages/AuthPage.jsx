@@ -7,18 +7,12 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { DEPARTMENTS, FACULTIES } from '../services/userService'
 
 const ROLES = [
   { id: 'student', label: 'Student' },
-  { id: 'faculty', label: 'Faculty' },
-  { id: 'admin', label: 'Administrator' },
-  { id: 'external', label: 'External Stakeholder' },
-]
-
-const DEPARTMENTS = [
-  'Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology',
-  'Engineering', 'Medicine', 'Law', 'Arts', 'Social Sciences',
-  'Management Sciences', 'Education', 'Environmental Sciences',
+  { id: 'staff', label: 'Staff' },
+  { id: 'non-staff', label: 'Non-Staff' },
 ]
 
 /* ── Floating preview card: Ticket Status ── */
@@ -100,7 +94,7 @@ export default function AuthPage() {
   const [form, setForm] = useState({
     email: '', password: '', role: 'student', remember: false,
     firstName: '', lastName: '', studentId: '', department: '',
-    confirmPassword: '', agreeTerms: false,
+    faculty: 'Science', phone: '', confirmPassword: '', agreeTerms: false,
   })
 
   const switchMode = useCallback((next) => {
@@ -116,18 +110,33 @@ export default function AuthPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    await login(form.email, form.password, form.role)
-    navigate(`/${form.role}`)
+    // Same mapping as sign-up: students get the student portal, Staff and
+    // Non-Staff share the staff portal, and the category rides along so the
+    // profile shows the right label.
+    const internalRole = form.role === 'student' ? 'student' : 'faculty'
+    await login(form.email, form.password, internalRole, form.role === 'student' ? '' : form.role)
+    navigate(`/${internalRole}`)
   }
 
   const handleRegister = async (e) => {
     e.preventDefault()
-    await registerUser(form)
-    switchMode('login')
+    // Student / Staff / Non-Staff are what the form collects; Staff and
+    // Non-Staff share the staff portal, and the category rides along on the
+    // profile so every screen can show the right label.
+    const internalRole = form.role === 'student' ? 'student' : 'faculty'
+    const result = await registerUser({
+      ...form,
+      role: internalRole,
+      staffCategory: form.role === 'student' ? '' : form.role,
+    })
+    if (result?.meta?.requestStatus === 'fulfilled') {
+      // Registration signs you in, so land on the dashboard for your role.
+      navigate(`/${result.payload?.user?.role || internalRole}`)
+    }
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#F5F0EB] via-[#FAF8F3] to-[#F0EDE8]">
+    <div className="auth-surface min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-[#F5F0EB] via-[#FAF8F3] to-[#F0EDE8]">
       {/* ─── Left Panel: Auth Form ─── */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-10 min-h-screen overflow-y-auto">
         <div className="w-full max-w-[420px]">
@@ -399,14 +408,6 @@ export default function AuthPage() {
                     transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Student / Staff ID</label>
-                <input name="studentId" placeholder="e.g., 2021/12345" value={form.studentId} onChange={handleChange} required
-                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                    placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                    transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Role</label>
@@ -417,20 +418,56 @@ export default function AuthPage() {
                       bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
                       bg-no-repeat bg-[right_12px_center]">
                     <option value="student">Student</option>
-                    <option value="faculty">Faculty</option>
+                    <option value="staff">Staff</option>
+                    <option value="non-staff">Non-Staff</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Department</label>
-                  <select name="department" value={form.department} onChange={handleChange} required
+                  {form.role === 'non-staff' ? (
+                    <input name="department" placeholder="Type your unit or office" value={form.department} onChange={handleChange} required
+                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                        placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
+                        transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                  ) : (
+                    <select name="department" value={form.department} onChange={handleChange} required
+                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                        focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
+                        transition-all duration-200 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]
+                        bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
+                        bg-no-repeat bg-[right_12px_center]">
+                      <option value="">Select</option>
+                      {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Student / Staff ID</label>
+                <input name="studentId" placeholder="e.g., 2021/12345" value={form.studentId} onChange={handleChange} required
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                    placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
+                    transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Faculty</label>
+                  <select name="faculty" value={form.faculty} onChange={handleChange}
                     className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
                       focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
                       transition-all duration-200 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]
-                      bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
                       bg-no-repeat bg-[right_12px_center]">
-                    <option value="">Select</option>
-                    {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    {FACULTIES.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Phone Number</label>
+                  <input name="phone" type="tel" placeholder="080 0000 0000" value={form.phone} onChange={handleChange}
+                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
+                      placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
+                      transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
                 </div>
               </div>
 

@@ -7,6 +7,9 @@ import { useNavigate } from 'react-router-dom'
 import { formatRelativeTime } from '../utils/formatters'
 import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { useDarkMode } from '../hooks/useDarkMode'
+import StatusPill from '../components/common/StatusPill/StatusPill'
+import { getProfile } from '../services/userService'
+import { STORAGE_KEYS, readArray } from '../utils/storage'
 
 const defaultStats = [
   { label: 'Active', value: 3, color: '#1266f1', gradient: 'from-[#1266f1] to-[#0e52c1]', icon: (
@@ -43,26 +46,18 @@ export default function StudentDashboard() {
   const dark = useDarkMode()
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('lagvoice_user')
-      if (stored) {
-        const u = JSON.parse(stored)
-        if (u.name) setUserName(u.name.split(' ')[0])
-      }
-    } catch {}
+    const profile = getProfile()
+    if (profile.name) setUserName(profile.name.split(' ')[0])
   }, [])
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('lagvoice_complaints')
-      if (stored) {
-        const complaints = JSON.parse(stored)
-        setSubmittedComplaints(complaints.map(c => ({
-          id: c.id, trackingId: c.trackingId, title: c.title,
-          status: c.status || 'pending', category: c.category, createdAt: c.createdAt,
-        })))
-      }
-    } catch {}
+    const complaints = readArray(STORAGE_KEYS.complaints)
+    setSubmittedComplaints(complaints
+      .filter((c) => c && typeof c === 'object')
+      .map((c) => ({
+        id: c.id, trackingId: c.trackingId, title: c.title,
+        status: c.status || 'pending', category: c.category, createdAt: c.createdAt,
+      })))
   }, [])
 
   const allTickets = [...submittedComplaints, ...defaultTickets]
@@ -210,12 +205,7 @@ export default function StudentDashboard() {
                       )}
                     </div>
                   </div>
-                  <span
-                    className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-[0.06em]"
-                    style={{ color: status?.color, backgroundColor: status?.bgColor }}
-                  >
-                    {status?.label}
-                  </span>
+                  <StatusPill status={status} />
                 </button>
               )
             })}

@@ -604,7 +604,7 @@ export default function LandingPage() {
             {[
               { name: 'Adaeze Okonkwo', role: '300L Computer Science', quote: 'I reported a broken projector in my lecture hall and it was fixed within 48 hours. LagVoice actually works.', avatar: 'AO' },
               { name: 'Dr. Femi Adebayo', role: 'Faculty of Engineering', quote: 'The peer review system has genuinely improved how we evaluate teaching quality. It is structured, fair, and anonymous.', avatar: 'FA' },
-              { name: 'Blessing Eze', role: 'SERICOM Officer', quote: 'The analytics dashboard shows us patterns we never noticed. We can now predict and prevent issues before they escalate.', avatar: 'BE' },
+              { name: 'Blessing Eze', role: 'SERVICOM Officer', quote: 'The analytics dashboard shows us patterns we never noticed. We can now predict and prevent issues before they escalate.', avatar: 'BE' },
             ].map((t, i) => (
               <Reveal key={i} delay={i * 100}>
                 <div className="bg-cream rounded-2xl p-7 border border-mist/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300 h-full">
@@ -681,22 +681,22 @@ export default function LandingPage() {
                 <img src="/images/unilag-official-logo.png" alt="University of Lagos" className="w-28 h-28 sm:w-32 sm:h-32 object-contain" />
                 <div className="text-center">
                   <p className="text-[14px] font-bold text-ink">University of Lagos</p>
-                  <p className="text-[12px] text-ink/40 mt-0.5">In Deed and in Truth</p>
+                  <p className="text-[12px] text-ink/40 mt-0.5 tracking-wide">IN DEED AND IN TRUTH</p>
                 </div>
               </div>
               <div className="w-px h-20 bg-mist/50 hidden sm:block" />
               <div className="flex flex-col items-center gap-3">
                 <img src="/images/servicom-logo.png" alt="SERVICOM" className="w-28 h-28 sm:w-32 sm:h-32 object-contain" />
                 <div className="text-center">
-                  <p className="text-[14px] font-bold text-ink">SERICOM</p>
-                  <p className="text-[12px] text-ink/40 mt-0.5">Service Compact With All Nigerians</p>
+                  <p className="text-[14px] font-bold text-ink">SERVICOM</p>
+                  <p className="text-[12px] text-ink/40 mt-0.5 tracking-wide">SERVICE COMPACT WITH ALL NIGERIANS</p>
                 </div>
               </div>
             </div>
           </Reveal>
           <Reveal delay={200}>
             <p className="text-center text-[12px] text-ink/30 mt-10 max-w-lg mx-auto leading-relaxed">
-              LagVoice is an initiative of the University of Lagos SERICOM unit, dedicated to improving service delivery and quality assurance across campus.
+              LagVoice is an initiative of the University of Lagos SERVICOM unit, dedicated to improving service delivery and quality assurance across campus.
             </p>
           </Reveal>
         </div>

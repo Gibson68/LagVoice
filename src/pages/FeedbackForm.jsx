@@ -5,6 +5,7 @@
  */
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { STORAGE_KEYS, readArray, writeJSON } from '../utils/storage'
 
 const CATEGORIES = [
   {
@@ -121,11 +122,8 @@ export default function FeedbackForm() {
       status: 'submitted',
       createdAt: new Date().toISOString(),
     }
-    try {
-      const existing = JSON.parse(localStorage.getItem('lagvoice_complaints') || '[]')
-      existing.unshift(complaint)
-      localStorage.setItem('lagvoice_complaints', JSON.stringify(existing))
-    } catch (e) { /* ignore */ }
+    const existing = readArray(STORAGE_KEYS.complaints).filter((c) => c && typeof c === 'object')
+    writeJSON(STORAGE_KEYS.complaints, [complaint, ...existing])
 
     setSubmitting(false)
     setStep(3)

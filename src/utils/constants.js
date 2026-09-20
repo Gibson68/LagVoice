@@ -11,7 +11,6 @@ export const ROUTES = {
   STUDENT_DASHBOARD: '/student',
   ADMIN_DASHBOARD: '/admin',
   FACULTY_DASHBOARD: '/faculty',
-  EXTERNAL_DASHBOARD: '/external',
   FEEDBACK_SUBMIT: '/student/feedback',
   TICKET_DETAIL: '/student/ticket/:id',
   TICKETS_LIST: '/student/tickets',
@@ -24,7 +23,6 @@ export const ROLES = {
   STUDENT: 'student',
   FACULTY: 'faculty',
   ADMIN: 'admin',
-  EXTERNAL: 'external',
 }
 
 // Feedback categories with icons and colors

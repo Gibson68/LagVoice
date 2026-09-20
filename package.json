@@ -3,11 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "LagVoice — UNILAG Quality Assurance feedback platform",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "node static-preview.mjs 4173"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",

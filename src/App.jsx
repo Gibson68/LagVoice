@@ -15,7 +15,6 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const FacultyDashboard = lazy(() => import('./pages/FacultyDashboard'))
-const ExternalDashboard = lazy(() => import('./pages/ExternalDashboard'))
 const FeedbackForm = lazy(() => import('./pages/FeedbackForm'))
 const TicketList = lazy(() => import('./pages/TicketList'))
 const TicketDetail = lazy(() => import('./pages/TicketDetail'))
@@ -182,16 +181,6 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['faculty']}>
               <AdminLayout><FacultyDashboard /></AdminLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* External Routes */}
-        <Route
-          path="/external"
-          element={
-            <ProtectedRoute allowedRoles={['external']}>
-              <AdminLayout><ExternalDashboard /></AdminLayout>
             </ProtectedRoute>
           }
         />

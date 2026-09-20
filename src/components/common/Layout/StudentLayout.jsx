@@ -5,8 +5,8 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../hooks/useAuth'
-import { useNotifications } from '../../../hooks/useNotifications'
-import { useDarkMode } from '../../../hooks/useDarkMode'
+import { useDarkModeToggle } from '../../../hooks/useDarkMode'
+import NotificationBell from '../NotificationBell/NotificationBell'
 
 const navItems = [
   { label: 'Home', path: '/student', icon: (
@@ -80,25 +80,18 @@ function LogoutModal({ open, onConfirm, onCancel }) {
 }
 
 export default function StudentLayout({ children }) {
-  const [notifOpen, setNotifOpen] = useState(false)
   const [showLogout, setShowLogout] = useState(false)
-  const darkMode = useDarkMode()
+  const [darkMode, toggleDark] = useDarkModeToggle()
   const [sidebarReady, setSidebarReady] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const { notifications, unreadCount, markAllAsRead } = useNotifications()
 
   // Sidebar entrance animation
   useEffect(() => {
     const t = setTimeout(() => setSidebarReady(true), 100)
     return () => clearTimeout(t)
   }, [])
-
-  const toggleDark = () => {
-    const next = !darkMode
-    try { localStorage.setItem('lagvoice_dark', String(next)) } catch {}
-  }
 
   const handleLogout = () => setShowLogout(true)
   const confirmLogout = () => {
@@ -137,8 +130,12 @@ export default function StudentLayout({ children }) {
                   sidebarReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
                 } ${
                   isActive
-                    ? 'bg-white text-[#1E1B4B] shadow-lg shadow-black/20'
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/8'
+                    ? darkMode
+                      ? 'bg-white text-[#1E1B4B] shadow-[0_0_20px_rgba(96,140,255,0.45)] ring-1 ring-white/30 sidebar-active-glow'
+                      : 'bg-white text-[#1E1B4B] shadow-lg shadow-black/20'
+                    : darkMode
+                      ? 'text-white/60 hover:text-white hover:bg-white/12'
+                      : 'text-white/40 hover:text-white/70 hover:bg-white/8'
                 }`
               }
               style={{ transitionDelay: sidebarReady ? `${200 + i * 60}ms` : '0ms' }}
@@ -161,7 +158,7 @@ export default function StudentLayout({ children }) {
             onClick={toggleDark}
             className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 group ${
               sidebarReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
-            } ${darkMode ? 'text-yellow-400 bg-white/8' : 'text-white/40 hover:text-white/70 hover:bg-white/8'}`}
+            } ${darkMode ? 'text-yellow-300 bg-white/12' : 'text-white/40 hover:text-white/70 hover:bg-white/8'}`}
             style={{ transitionDelay: sidebarReady ? `${200 + navItems.length * 60}ms` : '0ms' }}
             aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           >
@@ -274,20 +271,7 @@ export default function StudentLayout({ children }) {
               </button>
 
               {/* Notifications */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  className={`relative p-2.5 rounded-xl transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-[#F0F3F8]'}`}
-                  aria-label="Notifications"
-                >
-                  <svg className={`w-5 h-5 ${darkMode ? 'text-white/40' : 'text-[#4f4f4f]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#f93154] pulse-dot" />
-                  )}
-                </button>
-              </div>
+              <NotificationBell />
 
               {/* User */}
               <div className={`flex items-center gap-2.5 pl-3 border-l ${darkMode ? 'border-white/10' : 'border-[#1266f1]/8'}`}>
@@ -300,7 +284,8 @@ export default function StudentLayout({ children }) {
         </header>
 
         {/* Content */}
-        <main className={`flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 transition-colors duration-300 ${
+        {/* pb-24 keeps the last card clear of the fixed mobile bottom nav */}
+        <main className={`flex-1 overflow-y-auto px-4 pt-4 pb-24 sm:px-6 sm:pt-6 lg:p-8 transition-colors duration-300 ${
           darkMode ? 'bg-[#0f172a]' : 'bg-[#F0F3F8]'
         }`}>
           {children}
@@ -310,30 +295,29 @@ export default function StudentLayout({ children }) {
       {/* ═══ Mobile Bottom Nav ═══ */}
       <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t transition-colors duration-300 ${
         darkMode ? 'bg-[#1e293b] border-white/5' : 'bg-white border-[#E4E8EE]'
-      }`} aria-label="Student navigation">
-        <div className="flex items-center justify-around px-2 py-2">
+      }`} aria-label="Student navigation" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex items-stretch px-1 py-1.5">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 ${
+                `flex-1 min-w-0 flex flex-col items-center gap-0.5 py-2 rounded-xl transition-all duration-200 ${
                   isActive
-                    ? 'text-[#1266f1] bg-[#1266f1]/8'
-                    : darkMode ? 'text-white/30 hover:text-white/60' : 'text-[#9fa6b2] hover:text-[#4f4f4f]'
+                    ? darkMode
+                      ? 'text-[#7aa5ff] bg-[#1266f1]/25 ring-1 ring-[#7aa5ff]/30'
+                      : 'text-[#1266f1] bg-[#1266f1]/8'
+                    : darkMode ? 'text-white/40 hover:text-white/70' : 'text-[#9fa6b2] hover:text-[#4f4f4f]'
                 }`
               }
               end={item.path === '/student'}
             >
               {item.icon}
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[9px] font-medium leading-tight truncate max-w-full">{item.label}</span>
             </NavLink>
           ))}
         </div>
       </nav>
-
-      {/* Spacer for mobile bottom nav */}
-      <div className="lg:hidden h-[72px]" />
     </div>
   )
 }

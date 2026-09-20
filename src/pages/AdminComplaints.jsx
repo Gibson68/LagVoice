@@ -3,6 +3,7 @@
  * Filterable table, status updates, bulk actions
  */
 import { useState } from 'react'
+import StatusPill from '../components/common/StatusPill/StatusPill'
 import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
 
@@ -120,12 +121,7 @@ export default function AdminComplaints() {
                       <span className="text-[12px] text-ink/50">{c.dept}</span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span
-                        className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-[0.08em]"
-                        style={{ color: status?.color, backgroundColor: status?.bgColor }}
-                      >
-                        {status?.label}
-                      </span>
+                      <StatusPill status={status} />
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`text-[10px] font-bold uppercase tracking-wider ${

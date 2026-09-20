@@ -3,8 +3,12 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { BrowserRouter } from 'react-router-dom'
 import { store } from './store'
+import { migrateLegacyAccounts } from './services/userService'
 import App from './App.jsx'
 import './index.css'
+
+// Repair anything an older build left in storage before the first render.
+migrateLegacyAccounts()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

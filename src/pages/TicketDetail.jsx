@@ -8,11 +8,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
 import { useDarkMode } from '../hooks/useDarkMode'
+import StatusPill from '../components/common/StatusPill/StatusPill'
 
 // ── Intelligent Pipeline Steps ──
 const FULL_PIPELINE = [
   { key: 'submitted', label: 'Complaint Submitted', description: 'Your feedback has been received and assigned a tracking ID.' },
-  { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERICOM/QA office has acknowledged your complaint.' },
+  { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERVICOM/QA office has acknowledged your complaint.' },
   { key: 'assigned_dsa', label: 'Assigned to DSA', description: 'The complaint has been assigned to the Dean of Student Affairs for review.' },
   { key: 'dsa_reviewing', label: 'DSA Reviewing Complaint', description: 'The DSA team is reviewing the complaint details and evidence.' },
   { key: 'forwarded_dept', label: 'Forwarded to Relevant Department', description: 'The complaint has been forwarded to the department responsible for resolution.' },
@@ -25,7 +26,7 @@ const CATEGORY_PIPELINES = {
   infrastructure: FULL_PIPELINE,
   academic: [
     { key: 'submitted', label: 'Complaint Submitted', description: 'Your feedback has been received and assigned a tracking ID.' },
-    { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERICOM/QA office has acknowledged your complaint.' },
+    { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERVICOM/QA office has acknowledged your complaint.' },
     { key: 'assigned_dept', label: 'Assigned to Faculty', description: 'The complaint has been forwarded to the Faculty of the course in question.' },
     { key: 'hod_reviewing', label: 'HOD Reviewing', description: 'The Head of Department is reviewing the complaint.' },
     { key: 'dept_working', label: 'Action in Progress', description: 'The department is taking action on the reported issue.' },
@@ -34,7 +35,7 @@ const CATEGORY_PIPELINES = {
   ],
   welfare: [
     { key: 'submitted', label: 'Complaint Submitted', description: 'Your feedback has been received and assigned a tracking ID.' },
-    { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERICOM/QA office has acknowledged your complaint.' },
+    { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERVICOM/QA office has acknowledged your complaint.' },
     { key: 'assigned_dsa', label: 'Assigned to DSA', description: 'This welfare concern has been routed directly to the Dean of Student Affairs.' },
     { key: 'dsa_reviewing', label: 'DSA Reviewing', description: 'The DSA team is reviewing your welfare concern.' },
     { key: 'intervention', label: 'Intervention in Progress', description: 'Active steps are being taken to address your welfare concern.' },
@@ -42,7 +43,7 @@ const CATEGORY_PIPELINES = {
   ],
   admin: [
     { key: 'submitted', label: 'Complaint Submitted', description: 'Your feedback has been received and assigned a tracking ID.' },
-    { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERICOM/QA office has acknowledged your complaint.' },
+    { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERVICOM/QA office has acknowledged your complaint.' },
     { key: 'assigned_ict', label: 'Assigned to ICT/Admin', description: 'Forwarded to the relevant administrative or ICT unit.' },
     { key: 'dept_working', label: 'Working on Issue', description: 'The team is actively working on the administrative issue.' },
     { key: 'resolution_submitted', label: 'Resolution Submitted', description: 'A proposed resolution has been submitted for QA review.' },
@@ -50,7 +51,7 @@ const CATEGORY_PIPELINES = {
   ],
   general: [
     { key: 'submitted', label: 'Complaint Submitted', description: 'Your feedback has been received and assigned a tracking ID.' },
-    { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERICOM/QA office has acknowledged your feedback.' },
+    { key: 'received_qa', label: 'Received by Quality Assurance', description: 'SERVICOM/QA office has acknowledged your feedback.' },
     { key: 'under_review', label: 'Under Review', description: 'Your feedback is being reviewed by the QA team.' },
     { key: 'resolved', label: 'Acknowledged', description: 'Your feedback has been reviewed and acknowledged.' },
   ],
@@ -82,12 +83,12 @@ const MOCK_TICKET = {
 
 const MOCK_TIMELINE = [
   { step: 'submitted', time: new Date(Date.now() - 3600000 * 24).toISOString(), by: 'System' },
-  { step: 'received_qa', time: new Date(Date.now() - 3600000 * 20).toISOString(), by: 'SERICOM Office' },
+  { step: 'received_qa', time: new Date(Date.now() - 3600000 * 20).toISOString(), by: 'SERVICOM Office' },
   { step: 'assigned_dsa', time: new Date(Date.now() - 3600000 * 16).toISOString(), by: 'Dr. Funke Adeyemi' },
 ]
 
 const MOCK_COMMENTS = [
-  { id: 1, author: 'SERICOM Office', role: 'admin', text: 'We have received your complaint and assigned it to the maintenance team. An inspection will be carried out shortly.', time: new Date(Date.now() - 3600000 * 20).toISOString() },
+  { id: 1, author: 'SERVICOM Office', role: 'admin', text: 'We have received your complaint and assigned it to the maintenance team. An inspection will be carried out shortly.', time: new Date(Date.now() - 3600000 * 20).toISOString() },
   { id: 2, author: 'DSA Office', role: 'admin', text: 'The complaint has been reviewed and forwarded to the Works and Maintenance department. They will conduct an on-site inspection within 48 hours.', time: new Date(Date.now() - 3600000 * 12).toISOString() },
 ]
 
@@ -135,6 +136,8 @@ export default function TicketDetail() {
   const text3 = dark ? 'text-slate-400' : 'text-[#9fa6b2]'
   const subtle = dark ? 'bg-white/5' : 'bg-[#F5F7FA]'
   const hoverBg = dark ? 'hover:bg-white/5' : 'hover:bg-[#F5F7FA]'
+  const textFaint = dark ? 'text-slate-500' : 'text-[#9fa6b2]/50'
+  const placeholderTone = dark ? 'placeholder:text-slate-500' : 'placeholder:text-[#9fa6b2]'
 
   const addComment = () => {
     if (!comment.trim()) return
@@ -164,13 +167,7 @@ export default function TicketDetail() {
           <div>
             <span className={`text-[10px] font-mono ${text3}`}>{ticket.trackingId}</span>
             <h1 className={`text-[1.3rem] font-bold ${text1} mt-1`}>{ticket.title}</h1>
-          </div>
-          <span
-            className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-[0.08em]"
-            style={{ color: status?.color, backgroundColor: status?.bgColor }}
-          >
-            {status?.label}
-          </span>
+          </div>          <StatusPill status={status} />
         </div>
 
         {/* Progress bar */}
@@ -229,7 +226,7 @@ export default function TicketDetail() {
                       <p className={`text-[13px] font-semibold ${isCurrent ? 'text-[#1266f1]' : isDone ? text1 : text3}`}>
                         {step.label}
                       </p>
-                      <p className={`text-[11px] mt-0.5 leading-relaxed ${isDone || isCurrent ? text3 : `${text3}/50`}`}>
+                      <p className={`text-[11px] mt-0.5 leading-relaxed ${isDone || isCurrent ? text3 : textFaint}`}>
                         {step.description}
                       </p>
                     </div>
@@ -237,7 +234,7 @@ export default function TicketDetail() {
                   {timelineEntry && (
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className={`text-[10px] ${text3} font-mono`}>{formatRelativeTime(timelineEntry.time)}</span>
-                      <span className={`text-[10px] ${text3}/40`}>·</span>
+                      <span className={`text-[10px] ${textFaint}`}>·</span>
                       <span className={`text-[10px] ${text3}`}>by {timelineEntry.by}</span>
                     </div>
                   )}
@@ -310,7 +307,7 @@ export default function TicketDetail() {
             onChange={e => setComment(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addComment()}
             placeholder="Add a comment or follow-up..."
-            className={`flex-1 px-4 py-2.5 rounded-xl ${subtle} border ${cardBorder} text-[13px] ${text1} placeholder:${text3} focus:outline-none focus:ring-2 focus:ring-[#1266f1]/15 focus:border-[#1266f1]/40 transition-all`}
+            className={`flex-1 px-4 py-2.5 rounded-xl ${subtle} border ${cardBorder} text-[13px] ${text1} ${placeholderTone} focus:outline-none focus:ring-2 focus:ring-[#1266f1]/15 focus:border-[#1266f1]/40 transition-all`}
           />
           <button
             onClick={addComment}

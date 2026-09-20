@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { useCallback } from 'react'
-import { loginUser, logout, clearError } from '../store/authSlice'
+import { loginUser, registerUser as registerUserThunk, logout, clearError } from '../store/authSlice'
 import { authService } from '../services/authService'
 import { ROLES } from '../utils/constants'
 
@@ -14,7 +14,14 @@ export function useAuth() {
   )
 
   const login = useCallback(
-    (email, password, role) => dispatch(loginUser({ email, password, role })),
+    (email, password, role, staffCategory = '') =>
+      dispatch(loginUser({ email, password, role, staffCategory })),
+    [dispatch]
+  )
+
+  /** Creates the account record, then signs the new user straight in. */
+  const registerUser = useCallback(
+    (userData) => dispatch(registerUserThunk(userData)),
     [dispatch]
   )
 
@@ -28,7 +35,6 @@ export function useAuth() {
   const isStudent = role === ROLES.STUDENT
   const isFaculty = role === ROLES.FACULTY
   const isAdmin = role === ROLES.ADMIN
-  const isExternal = role === ROLES.EXTERNAL
 
   return {
     user,
@@ -38,11 +44,11 @@ export function useAuth() {
     loading,
     error,
     login,
+    registerUser,
     logout: logoutUser,
     clearError: clearAuthError,
     isStudent,
     isFaculty,
     isAdmin,
-    isExternal,
   }
 }

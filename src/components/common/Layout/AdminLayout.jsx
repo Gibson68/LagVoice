@@ -6,7 +6,8 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../hooks/useAuth'
-import { useNotifications } from '../../../hooks/useNotifications'
+import { roleLabel } from '../../../services/userService'
+import NotificationBell from '../NotificationBell/NotificationBell'
 
 const adminNavItems = [
   { label: 'Overview', path: '/admin', icon: 'grid' },
@@ -113,12 +114,10 @@ function LogoutModal({ open, onConfirm, onCancel }) {
 
 export default function AdminLayout({ children }) {
   const [mobileNav, setMobileNav] = useState(false)
-  const [notifOpen, setNotifOpen] = useState(false)
   const [showLogout, setShowLogout] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout, isAdmin } = useAuth()
-  const { notifications, unreadCount, markAllAsRead } = useNotifications()
 
   const navItems = isAdmin ? adminNavItems : facultyNavItems
 
@@ -266,54 +265,13 @@ export default function AdminLayout({ children }) {
               <div className="w-px h-6 bg-[#1266f1]/8 hidden md:block" />
 
               {/* Notifications */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  className="relative p-2.5 rounded-xl hover:bg-[#F0F3F8] transition-colors"
-                  aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
-                >
-                  <svg className="w-5 h-5 text-[#9fa6b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
-                  </svg>
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#f93154] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                {notifOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-[#1266f1]/10 z-50 overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-[#1266f1]/8">
-                      <h3 className="text-[14px] font-semibold text-[#262626]">Notifications</h3>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={() => { markAllAsRead(); setNotifOpen(false) }}
-                          className="text-[11px] text-[#1266f1] hover:text-[#0e52c1] font-semibold"
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <p className="px-5 py-8 text-[13px] text-[#9fa6b2] text-center">No notifications yet</p>
-                      ) : notifications.map((n) => (
-                        <div key={n.id} className={`px-5 py-3.5 border-b border-[#1266f1]/5 hover:bg-[#F5F7FA] cursor-pointer transition-colors ${!n.read ? 'bg-[#EBF3FF]' : ''}`}>
-                          <p className="text-[13px] font-medium text-[#262626]">{n.title}</p>
-                          <p className="text-[12px] text-[#9fa6b2] mt-0.5 leading-relaxed">{n.message}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <NotificationBell />
 
               {/* Avatar with name */}
               <div className="flex items-center gap-2.5 pl-2">
                 <div className="text-right hidden sm:block">
                   <p className="text-[13px] font-semibold text-[#262626] leading-tight">{user?.name || 'Admin'}</p>
-                  <p className="text-[11px] text-[#9fa6b2]">{user?.role || 'Administrator'}</p>
+                  <p className="text-[11px] text-[#9fa6b2]">{roleLabel(user) || 'Administrator'}</p>
                 </div>
                 <div className="w-9 h-9 rounded-xl bg-[#1266f1] flex items-center justify-center text-white text-[13px] font-bold shadow-sm">
                   {user?.name?.charAt(0) || 'U'}
