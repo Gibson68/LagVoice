@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
   token: 'lagvoice_token',
   accounts: 'lagvoice_accounts',
   complaints: 'lagvoice_complaints',
+  evaluations: 'lagvoice_evaluations',
   prefs: 'lagvoice_notification_prefs',
   theme: 'lagvoice_dark',
 }

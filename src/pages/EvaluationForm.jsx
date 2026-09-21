@@ -1,17 +1,15 @@
 /**
  * EvaluationForm — Course & Lecturer Evaluation
- * Star ratings, Likert scales, open-ended questions, progress bar
+ *
+ * The course list comes from the department the student signed up with
+ * (plus university-wide GST courses). Ratings persist to storage, courses
+ * already evaluated are marked, and progress is computed per course.
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-const MOCK_COURSES = [
-  { id: 1, code: 'CSC 301', name: 'Data Structures & Algorithms', lecturer: 'Dr. Adebayo', department: 'Computer Science' },
-  { id: 2, code: 'MTH 201', name: 'Linear Algebra', lecturer: 'Prof. Okonkwo', department: 'Mathematics' },
-  { id: 3, code: 'PHY 101', name: 'Introduction to Physics', lecturer: 'Dr. Eze', department: 'Physics' },
-  { id: 4, code: 'ENG 401', name: 'Software Engineering', lecturer: 'Dr. Ibrahim', department: 'Computer Science' },
-  { id: 5, code: 'GST 111', name: 'Use of English', lecturer: 'Mrs. Akinola', department: 'General Studies' },
-]
+import { getCoursesForDepartment } from '../utils/courses'
+import { getProfile } from '../services/userService'
+import { STORAGE_KEYS, readArray, writeJSON } from '../utils/storage'
 
 const LIKERT_OPTIONS = [
   { value: 5, label: 'Strongly Agree' },
@@ -54,8 +52,16 @@ function StarRating({ value, onChange, size = 'md' }) {
 
 export default function EvaluationForm() {
   const navigate = useNavigate()
+  const profile = getProfile()
+  const department = profile.department || ''
+  const courses = getCoursesForDepartment(department)
+
+  const [evaluatedCodes, setEvaluatedCodes] = useState(() =>
+    readArray(STORAGE_KEYS.evaluations)
+      .filter(e => e && typeof e === 'object')
+      .map(e => e.courseCode),
+  )
   const [selectedCourse, setSelectedCourse] = useState(null)
-  const [ratings, setRatings] = useState({})
   const [likert, setLikert] = useState({})
   const [openEnded, setOpenEnded] = useState({ likes: '', suggestions: '' })
   const [overallRating, setOverallRating] = useState(0)
@@ -68,40 +74,96 @@ export default function EvaluationForm() {
 
   const handleSubmit = async () => {
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 1500))
+    await new Promise(r => setTimeout(r, 1200))
+
+    const evaluation = {
+      id: Date.now(),
+      courseCode: selectedCourse.code,
+      courseName: selectedCourse.name,
+      lecturer: selectedCourse.lecturer,
+      department,
+      level: selectedCourse.level,
+      likert,
+      overallRating,
+      likes: openEnded.likes,
+      suggestions: openEnded.suggestions,
+      evaluatedBy: profile.name || 'Anonymous',
+      createdAt: new Date().toISOString(),
+    }
+    const existing = readArray(STORAGE_KEYS.evaluations).filter(e => e && typeof e === 'object')
+    writeJSON(STORAGE_KEYS.evaluations, [evaluation, ...existing])
+    setEvaluatedCodes(prev => [evaluation.courseCode, ...prev])
+
     setSubmitting(false)
     setSubmitted(true)
   }
 
+  const resetForm = () => {
+    setSelectedCourse(null)
+    setRatings({})
+    setLikert({})
+    setOpenEnded({ likes: '', suggestions: '' })
+    setOverallRating(0)
+    setSubmitted(false)
+  }
+
   // Course selection
   if (!selectedCourse) {
+    const pending = courses.filter(c => !evaluatedCodes.includes(c.code))
+    const done = evaluatedCodes.length
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-[1.8rem] font-bold text-ink tracking-tight mb-1">Course Evaluations</h1>
-        <p className="text-[14px] text-ink/40 mb-6">Select a course to evaluate</p>
-
-        <div className="bg-paper rounded-2xl border border-mist/50 overflow-hidden">
-          {MOCK_COURSES.map((course, i) => (
-            <button
-              key={course.id}
-              onClick={() => setSelectedCourse(course)}
-              className={`w-full flex items-center gap-4 p-4 text-left hover:bg-cream/50 transition-colors ${
-                i < MOCK_COURSES.length - 1 ? 'border-b border-mist/20' : ''
-              }`}
-            >
-              <div className="w-10 h-10 rounded-xl bg-maroon/8 flex items-center justify-center text-maroon text-[12px] font-bold font-mono shrink-0">
-                {course.code.split(' ')[0]}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold text-ink truncate">{course.name}</p>
-                <p className="text-[12px] text-ink/35">{course.lecturer} · {course.code}</p>
-              </div>
-              <svg className="w-4 h-4 text-ink/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          ))}
+        <div className="flex items-start justify-between gap-4 mb-1">
+          <h1 className="text-[1.8rem] font-bold text-ink tracking-tight">Course Evaluations</h1>
+          <button onClick={() => navigate('/student')} className="shrink-0 text-[13px] text-ink/40 hover:text-ink font-medium transition-colors pt-2">
+            Dashboard
+          </button>
         </div>
+        <p className="text-[14px] text-ink/40 mb-6">
+          Courses for <span className="font-semibold text-ink/60">{department || 'your programme'}</span>
+          {done > 0 && <> · {done} evaluated · {Math.max(courses.length - done, 0)} remaining</>}
+        </p>
+
+        {pending.length === 0 ? (
+          <div className="bg-paper rounded-2xl border border-mist/50 p-10 text-center">
+            <div className="w-14 h-14 rounded-full bg-resolved/10 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-resolved" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-[15px] font-bold text-ink mb-1">All caught up</p>
+            <p className="text-[13px] text-ink/40">You have evaluated every course for {department || 'your programme'}. Thank you.</p>
+          </div>
+        ) : (
+          <div className="bg-paper rounded-2xl border border-mist/50 overflow-hidden">
+            {pending.map((course, i) => (
+              <button
+                key={course.id}
+                onClick={() => setSelectedCourse(course)}
+                className={`w-full flex items-center gap-4 p-4 text-left hover:bg-cream/50 transition-colors ${
+                  i < pending.length - 1 ? 'border-b border-mist/20' : ''
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-maroon/8 flex items-center justify-center text-maroon text-[12px] font-bold font-mono shrink-0">
+                  {course.code.split(' ')[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-ink truncate">{course.name}</p>
+                  <p className="text-[12px] text-ink/35">{course.lecturer} · {course.code} · {course.level}</p>
+                </div>
+                <svg className="w-4 h-4 text-ink/20 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {done > 0 && (
+          <p className="text-[12px] text-ink/30 mt-4 text-center">
+            {done} course{done > 1 ? 's' : ''} already evaluated this session — thank you.
+          </p>
+        )}
       </div>
     )
   }
@@ -130,7 +192,7 @@ export default function EvaluationForm() {
               <p className="text-[12px] text-ink/40">Your overall rating: {overallRating}/5</p>
             </div>
             <button
-              onClick={() => { setSelectedCourse(null); setRatings({}); setLikert({}); setOpenEnded({ likes: '', suggestions: '' }); setOverallRating(0); setSubmitted(false) }}
+              onClick={resetForm}
               className="w-full py-3 rounded-xl bg-maroon text-white font-semibold text-[14px] shadow-[0_2px_8px_rgba(128,0,0,0.2)] hover:bg-maroon-dark transition-all"
             >
               Evaluate Another Course
@@ -159,7 +221,7 @@ export default function EvaluationForm() {
           </div>
           <div>
             <p className="text-[15px] font-bold text-ink">{selectedCourse.name}</p>
-            <p className="text-[12px] text-ink/35">{selectedCourse.lecturer} · {selectedCourse.code}</p>
+            <p className="text-[12px] text-ink/35">{selectedCourse.lecturer} · {selectedCourse.code} · {selectedCourse.level}</p>
           </div>
         </div>
         {/* Progress */}

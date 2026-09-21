@@ -10,6 +10,7 @@ import { useDarkMode } from '../hooks/useDarkMode'
 import StatusPill from '../components/common/StatusPill/StatusPill'
 import { getProfile } from '../services/userService'
 import { STORAGE_KEYS, readArray } from '../utils/storage'
+import { getCoursesForDepartment } from '../utils/courses'
 
 const defaultStats = [
   { label: 'Active', value: 3, color: '#1266f1', gradient: 'from-[#1266f1] to-[#0e52c1]', icon: (
@@ -56,9 +57,25 @@ export default function StudentDashboard() {
       .filter((c) => c && typeof c === 'object')
       .map((c) => ({
         id: c.id, trackingId: c.trackingId, title: c.title,
-        status: c.status || 'pending', category: c.category, createdAt: c.createdAt,
+        status: c.status === 'submitted' ? 'pending' : (c.status || 'pending'), category: c.category, createdAt: c.createdAt,
       })))
   }, [])
+
+  // Real counts: your submissions + the department course list.
+  const profile = getProfile()
+  const courses = getCoursesForDepartment(profile.department)
+  const evaluatedCount = readArray(STORAGE_KEYS.evaluations).filter(e => e && typeof e === 'object').length
+  const evaluationsDue = Math.max(courses.length - evaluatedCount, 0)
+  const totalSubmissions = submittedComplaints.length + 13
+  const resolvedCount = submittedComplaints.filter(c => c.status === 'resolved').length + 8
+  const activeCount = submittedComplaints.filter(c => c.status !== 'resolved').length + 3
+
+  const stats = [
+    { ...defaultStats[0], value: activeCount },
+    { ...defaultStats[1], value: resolvedCount },
+    { ...defaultStats[2], value: evaluationsDue },
+    { ...defaultStats[3], value: totalSubmissions },
+  ]
 
   const allTickets = [...submittedComplaints, ...defaultTickets]
 
@@ -92,7 +109,7 @@ export default function StudentDashboard() {
           <div className="hidden lg:flex items-center gap-4">
             <div className="w-28 h-20 rounded-2xl bg-white/15 border border-white/20 backdrop-blur-sm flex items-center justify-center">
               <div className="text-center">
-                <p className="text-[1.6rem] font-bold text-white font-mono leading-none">3</p>
+                <p className="text-[1.6rem] font-bold text-white font-mono leading-none">{activeCount}</p>
                 <p className="text-[9px] text-white/50 uppercase tracking-wider mt-1">Active</p>
               </div>
             </div>
@@ -102,7 +119,7 @@ export default function StudentDashboard() {
 
       {/* ═══ Stats Row ═══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {defaultStats.map((stat) => (
+        {stats.map((stat) => (
           <div
             key={stat.label}
             className={`rounded-2xl p-5 group hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br ${stat.gradient} text-white shadow-lg relative overflow-hidden`}

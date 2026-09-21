@@ -4,7 +4,7 @@
  * Inspired by modern SaaS auth designs with UNILAG maroon/gold palette
  * Includes back-to-home button
  */
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { DEPARTMENTS, FACULTIES } from '../services/userService'
@@ -14,6 +14,12 @@ const ROLES = [
   { id: 'staff', label: 'Staff' },
   { id: 'non-staff', label: 'Non-Staff' },
 ]
+
+/* ── Inline validation message (stable module-level component) ── */
+function FieldError({ message }) {
+  if (!message) return null
+  return <p className="text-[11px] text-red-500 mt-1.5">{message}</p>
+}
 
 /* ── Floating preview card: Ticket Status ── */
 function TicketPreviewCard() {
@@ -91,6 +97,8 @@ export default function AuthPage() {
   const { login, registerUser, loading, error, clearError } = useAuth()
   const [mode, setMode] = useState('login')
   const [showPassword, setShowPassword] = useState(false)
+  const [signupStep, setSignupStep] = useState(1)
+  const [fieldErrors, setFieldErrors] = useState({})
   const [form, setForm] = useState({
     email: '', password: '', role: 'student', remember: false,
     firstName: '', lastName: '', studentId: '', department: '',
@@ -100,13 +108,93 @@ export default function AuthPage() {
   const switchMode = useCallback((next) => {
     setMode(next)
     clearError()
+    setSignupStep(1)
+    setFieldErrors({})
   }, [clearError])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
     if (error) clearError()
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const next = { ...prev }
+        delete next[name]
+        return next
+      })
+    }
   }
+
+  /* ── Sign-up wizard ── */
+  const SIGNUP_STEPS = [
+    { id: 'account', label: 'Account' },
+    { id: 'details', label: 'Details' },
+    { id: 'secure', label: 'Secure' },
+  ]
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  const passwordStrength = (pw) => {
+    if (!pw) return 0
+    let score = 0
+    if (pw.length >= 8) score += 1
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 1
+    if (/\d/.test(pw)) score += 1
+    if (/[^A-Za-z0-9]/.test(pw)) score += 1
+    return score
+  }
+  const strength = passwordStrength(form.password)
+  const strengthLabel = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'][strength]
+  const strengthColor = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-lime-500', 'bg-emerald-500'][strength]
+
+  const validateSignupStep = (step) => {
+    const errs = {}
+    if (step === 1) {
+      if (!form.firstName.trim()) errs.firstName = 'Enter your first name'
+      if (!form.lastName.trim()) errs.lastName = 'Enter your last name'
+      if (!EMAIL_RE.test(form.email.trim())) errs.email = 'Enter a valid email address'
+    }
+    if (step === 2) {
+      if (!String(form.department).trim()) errs.department = form.role === 'non-staff' ? 'Type your unit or office' : 'Select your department'
+      if (!form.studentId.trim()) errs.studentId = form.role === 'student' ? 'Enter your matric number' : 'Enter your staff ID'
+      if (form.phone && !/^[+\d][\d\s-]{6,14}$/.test(form.phone.trim())) errs.phone = 'Enter a valid phone number'
+    }
+    return errs
+  }
+
+  const goNextSignup = () => {
+    const errs = validateSignupStep(signupStep)
+    setFieldErrors(errs)
+    if (Object.keys(errs).length === 0) setSignupStep(s => Math.min(s + 1, 3))
+  }
+
+  const handleRegisterStep = (e) => {
+    if (signupStep < 3) {
+      e.preventDefault()
+      goNextSignup()
+      return
+    }
+    const errs = {}
+    if (!form.password || passwordStrength(form.password) < 2) errs.password = 'Use at least 8 characters with mixed case and a number'
+    if (form.confirmPassword !== form.password) errs.confirmPassword = 'Passwords do not match'
+    if (!form.agreeTerms) errs.agreeTerms = 'Please accept the policy to continue'
+    setFieldErrors(errs)
+    if (Object.keys(errs).length > 0) {
+      e.preventDefault()
+      return
+    }
+    handleRegister(e)
+  }
+
+  const errCls = (name) => (fieldErrors[name]
+    ? 'border-red-400 focus:ring-red-400/15 focus:border-red-400/50'
+    : 'border-mist/80 focus:ring-maroon/15 focus:border-maroon/40')
+  const inputCls = (name) => `w-full px-4 py-3 text-[14px] rounded-xl bg-white border ${errCls(name)} text-ink
+    placeholder:text-ink/25 focus:outline-none focus:ring-2 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]`
+  const selectCls = (name) => `w-full px-4 py-3 text-[14px] rounded-xl bg-white border ${errCls(name)} text-ink
+    focus:outline-none focus:ring-2 transition-all duration-200 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]
+    bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
+    bg-no-repeat bg-[right_12px_center]`
+  const errText = (name) => fieldErrors[name] || null
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -379,98 +467,121 @@ export default function AuthPage() {
               Join the<br />conversation<span className="text-gold">.</span>
             </h1>
             <p className="text-ink/40 text-[13px] sm:text-[14px] mb-5 sm:mb-6 leading-relaxed">
-              Create your account to start making a difference at UNILAG.
+              {['Create your account in three quick steps.', 'Tell us about your role and where you work or study.', 'Secure your account and review your details.'][signupStep - 1]}
             </p>
 
-            <form onSubmit={handleRegister} className="space-y-3 sm:space-y-3.5">
+            <form onSubmit={handleRegisterStep} noValidate className="space-y-3 sm:space-y-3.5">
+              {/* Step rail */}
+              <div className="flex items-center gap-2 mb-4" aria-label="Sign-up steps">
+                {SIGNUP_STEPS.map((s, i) => (
+                  <Fragment key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => { if (i < signupStep) { setFieldErrors({}); setSignupStep(i + 1) } }}
+                      className={`flex items-center gap-2 ${i < signupStep ? 'cursor-pointer' : 'cursor-default'}`}
+                      aria-current={signupStep === i + 1 ? 'step' : undefined}
+                    >
+                      <span className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center transition-all duration-300 ${
+                        signupStep > i + 1 ? 'bg-emerald-500 text-white'
+                        : signupStep === i + 1 ? 'bg-maroon text-white shadow-[0_2px_8px_rgba(128,0,0,0.3)] scale-110'
+                        : 'bg-mist/60 text-ink/30'
+                      }`}>
+                        {signupStep > i + 1 ? (
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        ) : i + 1}
+                      </span>
+                      <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${signupStep === i + 1 ? 'text-maroon' : 'text-ink/25'}`}>{s.label}</span>
+                    </button>
+                    {i < SIGNUP_STEPS.length - 1 && (
+                      <span className={`flex-1 h-px transition-colors duration-500 ${signupStep > i + 1 ? 'bg-emerald-400/60' : 'bg-mist/60'}`} />
+                    )}
+                  </Fragment>
+                ))}
+              </div>
+
+              {signupStep === 1 && (
+              <div className="space-y-3 animate-fade-step">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">First Name</label>
-                  <input name="firstName" placeholder="Chidinma" value={form.firstName} onChange={handleChange} required
-                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                      placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                      transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                  <input name="firstName" placeholder="Chidinma" value={form.firstName} onChange={handleChange}
+                    className={inputCls('firstName')} />
+                  <FieldError message={errText('firstName')} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Last Name</label>
-                  <input name="lastName" placeholder="Okafor" value={form.lastName} onChange={handleChange} required
-                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                      placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                      transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                  <input name="lastName" placeholder="Okafor" value={form.lastName} onChange={handleChange}
+                    className={inputCls('lastName')} />
+                  <FieldError message={errText('lastName')} />
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Email Address</label>
-                <input name="email" type="email" placeholder="you@student.unilag.edu.ng" value={form.email} onChange={handleChange} required
-                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                    placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                    transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                <input name="email" type="email" placeholder="you@student.unilag.edu.ng" value={form.email} onChange={handleChange}
+                  className={inputCls('email')} />
+                <FieldError message={errText('email')} />
               </div>
+              </div>
+              )}
 
+              {signupStep === 2 && (
+              <div className="space-y-3 animate-fade-step">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Role</label>
-                  <select name="role" value={form.role} onChange={handleChange}
-                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                      focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                      transition-all duration-200 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]
-                      bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
-                      bg-no-repeat bg-[right_12px_center]">
+                  <select name="role" value={form.role} onChange={handleChange} className={selectCls('role')}>
                     <option value="student">Student</option>
                     <option value="staff">Staff</option>
                     <option value="non-staff">Non-Staff</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Department</label>
+                  <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">
+                    {form.role === 'non-staff' ? 'Unit / Office' : 'Department'}
+                  </label>
                   {form.role === 'non-staff' ? (
-                    <input name="department" placeholder="Type your unit or office" value={form.department} onChange={handleChange} required
-                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                        placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                        transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                    <input name="department" placeholder="Type your unit or office" value={form.department} onChange={handleChange}
+                      className={inputCls('department')} />
                   ) : (
-                    <select name="department" value={form.department} onChange={handleChange} required
-                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                        focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                        transition-all duration-200 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]
-                        bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22%23800000%22%20d%3D%22M4.5%206l3.5%204%203.5-4z%22/%3E%3C/svg%3E')]
-                        bg-no-repeat bg-[right_12px_center]">
+                    <select name="department" value={form.department} onChange={handleChange} className={selectCls('department')}>
                       <option value="">Select</option>
                       {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   )}
+                  <FieldError message={errText('department')} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Student / Staff ID</label>
-                <input name="studentId" placeholder="e.g., 2021/12345" value={form.studentId} onChange={handleChange} required
-                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                    placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                    transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">
+                  {form.role === 'student' ? 'Student ID (Matric Number)' : 'Staff ID'}
+                </label>
+                <input name="studentId" placeholder={form.role === 'student' ? 'e.g., 2021/12345' : 'e.g., UNILAG/STF/0482'} value={form.studentId} onChange={handleChange}
+                  className={inputCls('studentId')} />
+                <FieldError message={errText('studentId')} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Faculty</label>
-                  <select name="faculty" value={form.faculty} onChange={handleChange}
-                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                      focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                      transition-all duration-200 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]
-                      bg-no-repeat bg-[right_12px_center]">
+                  <select name="faculty" value={form.faculty} onChange={handleChange} className={selectCls('faculty')} disabled={form.role === 'non-staff'}>
+                    {form.role === 'non-staff' && <option value="">Not applicable</option>}
                     {FACULTIES.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Phone Number</label>
                   <input name="phone" type="tel" placeholder="080 0000 0000" value={form.phone} onChange={handleChange}
-                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                      placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                      transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                    className={inputCls('phone')} />
+                  <FieldError message={errText('phone')} />
                 </div>
               </div>
+              </div>
+              )}
 
+              {signupStep === 3 && (
+              <div className="space-y-3 animate-fade-step">
               <div>
                 <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Password</label>
                 <div className="relative">
@@ -479,19 +590,53 @@ export default function AuthPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <input name="password" type="password" placeholder="Create a strong password" value={form.password} onChange={handleChange} required
-                    className="w-full pl-11 pr-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                      placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                      transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                  <input name="password" type="password" placeholder="Create a strong password" value={form.password} onChange={handleChange}
+                    className={`w-full pl-11 pr-4 py-3 text-[14px] rounded-xl bg-white border ${errCls('password')} text-ink
+                      placeholder:text-ink/25 focus:outline-none focus:ring-2 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]`} />
                 </div>
+                {/* Strength meter */}
+                {form.password && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 flex gap-1">
+                      {[0, 1, 2, 3].map(seg => (
+                        <span key={seg} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${seg < strength ? strengthColor : 'bg-mist/70'}`} />
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-semibold text-ink/40 w-16 text-right">{strengthLabel}</span>
+                  </div>
+                )}
+                <FieldError message={errText('password')} />
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-1.5">Confirm Password</label>
-                <input name="confirmPassword" type="password" placeholder="Confirm your password" value={form.confirmPassword} onChange={handleChange} required
-                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-white border border-mist/80 text-ink
-                    placeholder:text-ink/25 focus:outline-none focus:ring-2 focus:ring-maroon/15 focus:border-maroon/40
-                    transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" />
+                <input name="confirmPassword" type="password" placeholder="Confirm your password" value={form.confirmPassword} onChange={handleChange}
+                  className={inputCls('confirmPassword')} />
+                <FieldError message={errText('confirmPassword')} />
+              </div>
+
+              {/* Review */}
+              <div className="rounded-xl bg-cream/70 border border-mist/50 p-4">
+                <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-[0.15em] mb-2.5">Review your details</p>
+                <div className="space-y-1.5">
+                  {[
+                    ['Name', `${form.firstName} ${form.lastName}`.trim() || '—'],
+                    ['Email', form.email || '—'],
+                    ['Role', ROLES.find(r => r.id === form.role)?.label || form.role],
+                    ['Department', form.department || '—'],
+                    [form.role === 'student' ? 'Student ID' : 'Staff ID', form.studentId || '—'],
+                    ['Faculty', form.role === 'non-staff' ? 'Not applicable' : form.faculty],
+                    ['Phone', form.phone || '—'],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex items-center justify-between gap-3 text-[12px]">
+                      <span className="text-ink/35">{k}</span>
+                      <span className="text-ink font-medium text-right truncate max-w-[60%]">{v}</span>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={() => { setFieldErrors({}); setSignupStep(2) }} className="mt-3 text-[12px] font-semibold text-maroon hover:text-maroon-dark transition-colors">
+                  Edit details
+                </button>
               </div>
 
               <label className="flex items-start gap-2.5 cursor-pointer group pt-1">
@@ -512,6 +657,9 @@ export default function AuthPage() {
                   I agree to the <span className="text-maroon font-medium">UNILAG QAS Policy</span> and <span className="text-maroon font-medium">Terms of Service</span>
                 </span>
               </label>
+              <FieldError message={errText('agreeTerms')} />
+              </div>
+              )}
 
               {error && (
                 <div className="px-4 py-3 rounded-xl bg-escalated/5 border border-escalated/15 animate-shake" role="alert">
@@ -529,8 +677,11 @@ export default function AuthPage() {
                   disabled:opacity-50 disabled:cursor-not-allowed
                   relative overflow-hidden group mt-1"
               >
-                <span className={`transition-all duration-200 ${loading ? 'translate-y-[-20px] opacity-0' : ''}`}>
-                  Create Account
+                <span className={`inline-flex items-center gap-2 transition-all duration-200 ${loading ? 'translate-y-[-20px] opacity-0' : ''}`}>
+                  {signupStep < 3 ? 'Continue' : 'Create Account'}
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={signupStep < 3 ? 'M13 7l5 5-5 5M18 12H3' : 'M5 13l4 4L19 7'} />
+                  </svg>
                 </span>
                 {loading && (
                   <svg className="animate-spin absolute inset-0 m-auto h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">

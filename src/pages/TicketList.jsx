@@ -1,7 +1,7 @@
 /**
  * TicketList — Student Ticket Tracking
- * Filterable list, status badges, search, navigation to detail
- * Dark mode support via shared useDarkMode hook
+ * Real submissions from the feedback form appear at the top (newest first),
+ * followed by demo tickets. Filterable list, status badges, search.
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -9,6 +9,7 @@ import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
 import { useDarkMode } from '../hooks/useDarkMode'
 import StatusPill from '../components/common/StatusPill/StatusPill'
+import { STORAGE_KEYS, readArray } from '../utils/storage'
 
 const MOCK_TICKETS = [
   { id: 42, trackingId: 'UNILAG-00042', title: 'Broken AC in Lecture Hall B', status: 'under_review', category: 'Infrastructure', urgency: 'high', createdAt: new Date(Date.now() - 3600000).toISOString() },
@@ -23,14 +24,36 @@ const MOCK_TICKETS = [
 const STATUS_FILTERS = ['all', 'pending', 'under_review', 'resolved', 'escalated']
 const CATEGORY_FILTERS = ['all', 'Academic', 'Infrastructure', 'Admin', 'General']
 
+/** Feedback form stores status 'submitted' — normalise it to a status the UI knows. */
+const normaliseStatus = (status) => (status === 'submitted' ? 'pending' : status || 'pending')
+
 export default function TicketList() {
   const navigate = useNavigate()
   const dark = useDarkMode()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [submitted] = useState(() =>
+    readArray(STORAGE_KEYS.complaints)
+      .filter((c) => c && typeof c === 'object' && c.id)
+      .map((c) => ({
+        id: c.id,
+        trackingId: c.trackingId || `UNILAG-${c.id}`,
+        title: c.title || 'Untitled feedback',
+        status: normaliseStatus(c.status),
+        category: c.category || 'General',
+        categoryId: c.categoryId,
+        urgency: c.urgency || 'medium',
+        createdAt: c.createdAt || new Date().toISOString(),
+        mine: true,
+      })),
+  )
 
-  const filtered = MOCK_TICKETS.filter(t => {
+  const tickets = [...submitted, ...MOCK_TICKETS].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+  )
+
+  const filtered = tickets.filter(t => {
     const matchSearch = !search || t.title.toLowerCase().includes(search.toLowerCase()) || t.trackingId.toLowerCase().includes(search.toLowerCase())
     const matchStatus = statusFilter === 'all' || t.status === statusFilter
     const matchCategory = categoryFilter === 'all' || t.category === categoryFilter
@@ -44,15 +67,23 @@ export default function TicketList() {
   const cardBorder = dark ? 'border-white/10' : 'border-[#E4E8EE]'
   const hoverBg = dark ? 'hover:border-white/20 hover:bg-white/5' : 'hover:border-[#1266f1]/20 hover:shadow-[0_4px_16px_rgba(18,102,241,0.06)]'
   const inputBg = dark ? 'bg-[#0f172a] border-white/10 text-white placeholder:text-slate-500' : 'bg-white border-[#E4E8EE] text-[#262626] placeholder:text-[#9fa6b2]'
-  const filterActive = dark ? 'bg-[#1266f1] text-white' : 'bg-[#1266f1] text-white'
+  const filterActive = 'bg-[#1266f1] text-white'
   const filterInactive = dark ? 'bg-[#1e293b] border border-white/10 text-slate-400' : 'bg-white border border-[#E4E8EE] text-[#4f4f4f]'
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className={`text-[1.8rem] font-bold ${text1} tracking-tight`}>My Tickets</h1>
-        <p className={`text-[14px] ${text2} mt-1`}>Track all your submitted feedback</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className={`text-[1.8rem] font-bold ${text1} tracking-tight`}>My Tickets</h1>
+          <p className={`text-[14px] ${text2} mt-1`}>Track all your submitted feedback</p>
+        </div>
+        <button
+          onClick={() => navigate('/student/feedback')}
+          className="shrink-0 px-4 py-2.5 rounded-xl bg-[#1266f1] text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(18,102,241,0.25)] hover:bg-[#0e52c1] transition-all"
+        >
+          + New
+        </button>
       </div>
 
       {/* Search */}
@@ -97,7 +128,8 @@ export default function TicketList() {
                 ? 'bg-[#ffa900]/15 text-[#cc8800] border border-[#ffa900]/30 dark:text-[#ffa900]'
                 : filterInactive
             }`}
-          >              {c === 'all' ? 'All categories' : c}
+          >
+            {c === 'all' ? 'All categories' : c}
           </button>
         ))}
       </div>
@@ -105,8 +137,33 @@ export default function TicketList() {
       {/* Ticket List */}
       <div className="space-y-2">
         {filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <p className={`text-[14px] ${text2}`}>No tickets match your filters</p>
+          <div className={`text-center py-12 ${card} rounded-2xl border ${cardBorder}`}>
+            <div className={`w-12 h-12 mx-auto rounded-full ${dark ? 'bg-white/5' : 'bg-[#F5F7FA]'} flex items-center justify-center mb-4`}>
+              <svg className={`w-6 h-6 ${text3}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <p className={`text-[14px] font-semibold ${text1} mb-1`}>
+              {tickets.length === 0 ? 'No tickets yet' : 'No tickets match your filters'}
+            </p>
+            {tickets.length === 0 ? (
+              <>
+                <p className={`text-[13px] ${text3} mb-4`}>Submit your first feedback and it will appear here.</p>
+                <button
+                  onClick={() => navigate('/student/feedback')}
+                  className="px-5 py-2.5 rounded-xl bg-[#1266f1] text-white text-[13px] font-semibold hover:bg-[#0e52c1] transition-all"
+                >
+                  Submit Feedback
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => { setSearch(''); setStatusFilter('all'); setCategoryFilter('all') }}
+                className={`text-[13px] font-semibold text-[#1266f1] hover:underline`}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           filtered.map(ticket => {
@@ -122,6 +179,9 @@ export default function TicketList() {
                     <span className={`text-[10px] font-mono ${text3}`}>{ticket.trackingId}</span>
                     <span className={`text-[10px] ${dark ? 'text-slate-600' : 'text-[#9fa6b2]/40'}`}>·</span>
                     <span className={`text-[10px] ${text3}`}>{ticket.category}</span>
+                    {ticket.mine && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#00b74a]/10 text-[#00b74a] uppercase tracking-wider">You</span>
+                    )}
                   </div>
                   <p className={`text-[14px] font-semibold ${text1} truncate group-hover:text-[#1266f1] transition-colors`}>{ticket.title}</p>
                   <p className={`text-[11px] ${text3} mt-1`}>{formatRelativeTime(ticket.createdAt)}</p>

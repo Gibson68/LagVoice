@@ -9,6 +9,8 @@ import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
 import { useDarkMode } from '../hooks/useDarkMode'
 import StatusPill from '../components/common/StatusPill/StatusPill'
+import { getProfile } from '../services/userService'
+import { STORAGE_KEYS, readArray } from '../utils/storage'
 
 // ── Intelligent Pipeline Steps ──
 const FULL_PIPELINE = [
@@ -121,13 +123,38 @@ export default function TicketDetail() {
   const { id } = useParams()
   const dark = useDarkMode()
   const [comment, setComment] = useState('')
-  const [comments, setComments] = useState(MOCK_COMMENTS)
 
-  const ticket = MOCK_TICKET
+  // Real submissions live in storage; demo ids fall back to the sample ticket.
+  const stored = readArray(STORAGE_KEYS.complaints).find(c => c && String(c.id) === String(id))
+  const isReal = Boolean(stored)
+  const ticket = isReal ? {
+    ...MOCK_TICKET,
+    trackingId: stored.trackingId || `UNILAG-${stored.id}`,
+    title: stored.title || 'Untitled feedback',
+    description: stored.description || 'No description provided.',
+    status: stored.status || 'submitted',
+    category: stored.category || 'General',
+    categoryId: stored.categoryId || 'general',
+    subcategory: stored.subcategory || 'General Feedback',
+    urgency: stored.urgency || 'medium',
+    anonymous: Boolean(stored.anonymous),
+    location: stored.location,
+    gpsLat: stored.gpsLat,
+    gpsLng: stored.gpsLng,
+    images: Array.isArray(stored.images) ? stored.images : [],
+    createdAt: stored.createdAt || new Date().toISOString(),
+  } : MOCK_TICKET
+
+  const [comments, setComments] = useState(isReal ? [] : MOCK_COMMENTS)
+
   const pipeline = CATEGORY_PIPELINES[ticket.categoryId] || CATEGORY_PIPELINES.infrastructure
-  const currentStepIdx = pipeline.findIndex(s => s.key === ticket.status)
+  const currentStepIdx = Math.max(0, pipeline.findIndex(s => s.key === ticket.status))
   const progress = getProgressPercent(ticket.status, pipeline)
-  const status = TICKET_STATUS_CONFIG[ticket.status]
+  const status = TICKET_STATUS_CONFIG[ticket.status === 'submitted' ? 'pending' : ticket.status] || TICKET_STATUS_CONFIG.pending
+  const timeline = isReal
+    ? [{ step: 'submitted', time: ticket.createdAt, by: 'You' }]
+    : MOCK_TIMELINE
+  const author = getProfile().name || 'You'
 
   const card = dark ? 'bg-[#1e293b]' : 'bg-white'
   const cardBorder = dark ? 'border-white/6' : 'border-[#E4E8EE]'
@@ -143,7 +170,7 @@ export default function TicketDetail() {
     if (!comment.trim()) return
     setComments(prev => [...prev, {
       id: Date.now(),
-      author: 'Chidinma Okafor',
+      author,
       role: 'student',
       text: comment,
       time: new Date().toISOString(),
@@ -210,7 +237,7 @@ export default function TicketDetail() {
             const isDone = i < currentStepIdx
             const isCurrent = i === currentStepIdx
             const isFuture = i > currentStepIdx
-            const timelineEntry = MOCK_TIMELINE.find(t => t.step === step.key)
+            const timelineEntry = timeline.find(t => t.step === step.key)
 
             return (
               <div key={step.key} className="flex gap-3 relative">
@@ -255,6 +282,23 @@ export default function TicketDetail() {
       <div className={`${card} rounded-2xl border ${cardBorder} p-6 mb-4`}>
         <h2 className={`text-[15px] font-bold ${text1} mb-3`}>Description</h2>
         <p className={`text-[14px] ${text2} leading-relaxed`}>{ticket.description}</p>
+
+        {/* Photo evidence */}
+        {ticket.images.length > 0 && (
+          <div className="mt-4">
+            <p className={`text-[10px] ${text3} uppercase tracking-wider font-semibold mb-2`}>Photo evidence ({ticket.images.length})</p>
+            <div className="flex flex-wrap gap-2">
+              {ticket.images.map((name, i) => (
+                <span key={i} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium ${subtle} border ${cardBorder} ${text2}`}>
+                  <svg className="w-3 h-3 text-[#1266f1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 10-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         {ticket.gpsLat && ticket.gpsLng && (
           <div className={`mt-3 flex items-center gap-2 text-[12px] ${text3}`}>
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -277,6 +321,11 @@ export default function TicketDetail() {
       {/* Comments */}
       <div className={`${card} rounded-2xl border ${cardBorder} p-6 mb-4`}>
         <h2 className={`text-[15px] font-bold ${text1} mb-4`}>Comments & Updates</h2>
+        {comments.length === 0 && (
+          <div className={`rounded-xl p-4 mb-4 text-center ${subtle}`}>
+            <p className={`text-[12px] ${text3}`}>No replies yet. The Quality Assurance team will respond here as your ticket moves through the pipeline.</p>
+          </div>
+        )}
         <div className="space-y-4 mb-4">
           {comments.map(c => (
             <div key={c.id} className={`flex gap-3 ${c.role === 'student' ? 'flex-row-reverse' : ''}`}>
