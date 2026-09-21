@@ -1,14 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { authService } from '../services/authService'
-import { getProfile, hasSession } from '../services/userService'
-import { readRaw, STORAGE_KEYS } from '../utils/storage'
 
 // Async thunks
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async ({ email, password, role, staffCategory }, { rejectWithValue }) => {
+  async ({ email, password, role }, { rejectWithValue }) => {
     try {
-      const response = await authService.login(email, password, role, staffCategory)
+      const response = await authService.login(email, password, role)
       return response
     } catch (error) {
       return rejectWithValue(error.message || 'Login failed')
@@ -28,7 +26,7 @@ export const registerUser = createAsyncThunk(
   }
 )
 
-const emptyState = {
+const initialState = {
   user: null,
   token: null,
   isAuthenticated: false,
@@ -37,26 +35,6 @@ const emptyState = {
   error: null,
   registrationStep: 1,
 }
-
-/** Rehydrate a session from the last visit so a refresh keeps you signed in. */
-function restoreState() {
-  try {
-    if (!hasSession()) return emptyState
-    const user = getProfile()
-    if (!user?.email) return emptyState
-    return {
-      ...emptyState,
-      user,
-      token: readRaw(STORAGE_KEYS.token),
-      role: user.role,
-      isAuthenticated: true,
-    }
-  } catch {
-    return emptyState
-  }
-}
-
-const initialState = restoreState()
 
 const authSlice = createSlice({
   name: 'auth',
@@ -82,6 +60,9 @@ const authSlice = createSlice({
       state.role = role
       state.isAuthenticated = true
     },
+    updateUser(state, action) {
+      state.user = action.payload
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -106,14 +87,9 @@ const authSlice = createSlice({
         state.loading = true
         state.error = null
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
+      .addCase(registerUser.fulfilled, (state) => {
         state.loading = false
         state.registrationStep = 1
-        // Registering signs you in: the account record is already persisted.
-        state.user = action.payload.user
-        state.token = action.payload.token
-        state.role = action.payload.user?.role || null
-        state.isAuthenticated = Boolean(action.payload.token)
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false
@@ -122,5 +98,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { logout, clearError, setRegistrationStep, restoreSession } = authSlice.actions
+export const { logout, clearError, setRegistrationStep, restoreSession, updateUser } = authSlice.actions
 export default authSlice.reducer

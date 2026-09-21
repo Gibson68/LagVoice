@@ -4,17 +4,11 @@
  */
 import { useState } from 'react'
 
-const MOCK_POLLS = [
-  { id: 1, title: 'Campus Security Survey', description: 'Rate your sense of safety on campus', status: 'active', responses: 342, target: 'All Students', deadline: '2026-09-15', options: ['Very Safe', 'Safe', 'Neutral', 'Unsafe', 'Very Unsafe'], results: [45, 120, 98, 52, 27] },
-  { id: 2, title: 'Proposed Fee Structure Change', description: 'Student sentiment on the proposed fee adjustment for next semester', status: 'active', responses: 189, target: 'All Students', deadline: '2026-09-20', options: ['Strongly Support', 'Support', 'Neutral', 'Oppose', 'Strongly Oppose'], results: [23, 45, 67, 34, 20] },
-  { id: 3, title: 'Library Hours Extension', description: 'Should the library extend operating hours during exams?', status: 'closed', responses: 567, target: 'All Students', deadline: '2026-08-01', options: ['Yes, extend to 10pm', 'Yes, extend to 11pm', 'Current hours are fine', 'No opinion'], results: [234, 189, 98, 46] },
-]
-
 export default function AdminPolls() {
   const [activeTab, setActiveTab] = useState('active')
   const [showCreate, setShowCreate] = useState(false)
 
-  const polls = MOCK_POLLS.filter(p => activeTab === 'all' || p.status === activeTab)
+  const polls = []
 
   return (
     <div className="space-y-6">
@@ -80,15 +74,20 @@ export default function AdminPolls() {
               activeTab === tab ? 'bg-maroon text-white shadow-sm' : 'bg-paper border border-mist/50 text-ink/40 hover:text-ink/60'
             }`}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)} {tab !== 'all' && `(${MOCK_POLLS.filter(p => p.status === tab).length})`}
+            {tab.charAt(0).toUpperCase() + tab.slice(1)} {tab !== 'all' && `(0)`}
           </button>
         ))}
       </div>
 
       {/* Polls */}
       <div className="space-y-4">
-        {polls.map(poll => {
-          const maxResult = Math.max(...poll.results)
+        {polls.length === 0 ? (
+          <div className="text-center py-12 bg-paper rounded-2xl border border-mist/50">
+            <p className="text-[14px] text-ink/40 font-medium">No polls found.</p>
+          </div>
+        ) : (
+          polls.map(poll => {
+            const maxResult = Math.max(...poll.results)
           return (
             <div key={poll.id} className="bg-paper rounded-2xl border border-mist/50 p-6">
               <div className="flex items-start justify-between mb-4">
@@ -137,7 +136,7 @@ export default function AdminPolls() {
               </div>
             </div>
           )
-        })}
+        }))}
       </div>
     </div>
   )

@@ -9,7 +9,7 @@ import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
 import { useDarkMode } from '../hooks/useDarkMode'
 import StatusPill from '../components/common/StatusPill/StatusPill'
-import { getProfile } from '../services/userService'
+
 import { STORAGE_KEYS, readArray } from '../utils/storage'
 
 // ── Intelligent Pipeline Steps ──
@@ -65,35 +65,6 @@ function getProgressPercent(currentStatus, pipeline) {
   return Math.round(((idx + 1) / pipeline.length) * 100)
 }
 
-const MOCK_TICKET = {
-  id: 42,
-  trackingId: 'UNILAG-00042',
-  title: 'Broken AC in Lecture Hall B',
-  description: 'The air conditioning system in Lecture Hall B has been non-functional for over a week. The room temperature makes it extremely difficult to concentrate during lectures, especially during afternoon sessions. Multiple students have complained about the heat.',
-  status: 'assigned_dsa',
-  category: 'Infrastructure',
-  categoryId: 'infrastructure',
-  subcategory: 'Lecture Hall',
-  urgency: 'high',
-  anonymous: true,
-  location: 'Lecture Hall B, Faculty of Science',
-  gpsLat: 6.5174,
-  gpsLng: 3.3926,
-  images: ['lecture-hall-ac.jpg'],
-  createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-}
-
-const MOCK_TIMELINE = [
-  { step: 'submitted', time: new Date(Date.now() - 3600000 * 24).toISOString(), by: 'System' },
-  { step: 'received_qa', time: new Date(Date.now() - 3600000 * 20).toISOString(), by: 'SERVICOM Office' },
-  { step: 'assigned_dsa', time: new Date(Date.now() - 3600000 * 16).toISOString(), by: 'Dr. Funke Adeyemi' },
-]
-
-const MOCK_COMMENTS = [
-  { id: 1, author: 'SERVICOM Office', role: 'admin', text: 'We have received your complaint and assigned it to the maintenance team. An inspection will be carried out shortly.', time: new Date(Date.now() - 3600000 * 20).toISOString() },
-  { id: 2, author: 'DSA Office', role: 'admin', text: 'The complaint has been reviewed and forwarded to the Works and Maintenance department. They will conduct an on-site inspection within 48 hours.', time: new Date(Date.now() - 3600000 * 12).toISOString() },
-]
-
 function PipelineIcon({ isDone, isCurrent }) {
   if (isDone) {
     return (
@@ -124,37 +95,36 @@ export default function TicketDetail() {
   const dark = useDarkMode()
   const [comment, setComment] = useState('')
 
-  // Real submissions live in storage; demo ids fall back to the sample ticket.
-  const stored = readArray(STORAGE_KEYS.complaints).find(c => c && String(c.id) === String(id))
-  const isReal = Boolean(stored)
-  const ticket = isReal ? {
-    ...MOCK_TICKET,
-    trackingId: stored.trackingId || `UNILAG-${stored.id}`,
-    title: stored.title || 'Untitled feedback',
-    description: stored.description || 'No description provided.',
-    status: stored.status || 'submitted',
-    category: stored.category || 'General',
-    categoryId: stored.categoryId || 'general',
-    subcategory: stored.subcategory || 'General Feedback',
-    urgency: stored.urgency || 'medium',
-    anonymous: Boolean(stored.anonymous),
-    location: stored.location,
-    gpsLat: stored.gpsLat,
-    gpsLng: stored.gpsLng,
-    images: Array.isArray(stored.images) ? stored.images : [],
-    createdAt: stored.createdAt || new Date().toISOString(),
-  } : MOCK_TICKET
+  const [ticket, setTicket] = useState(null)
+  const [comments, setComments] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const [comments, setComments] = useState(isReal ? [] : MOCK_COMMENTS)
+  useEffect(() => {
+    const fetchTicket = async () => {
+      setLoading(true)
+      try {
+        const data = await ticketService.getTicketById(id)
+        setTicket(data)
+        setComments(data.comments || [])
+      } catch (err) {
+        setError('Failed to fetch ticket details.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchTicket()
+  }, [id])
+
+  if (loading) return <div className="p-8 text-center text-ink/40">Loading ticket...</div>
+  if (error || !ticket) return <div className="p-8 text-center text-red-500">{error || 'Ticket not found'}</div>
 
   const pipeline = CATEGORY_PIPELINES[ticket.categoryId] || CATEGORY_PIPELINES.infrastructure
   const currentStepIdx = Math.max(0, pipeline.findIndex(s => s.key === ticket.status))
   const progress = getProgressPercent(ticket.status, pipeline)
   const status = TICKET_STATUS_CONFIG[ticket.status === 'submitted' ? 'pending' : ticket.status] || TICKET_STATUS_CONFIG.pending
-  const timeline = isReal
-    ? [{ step: 'submitted', time: ticket.createdAt, by: 'You' }]
-    : MOCK_TIMELINE
-  const author = getProfile().name || 'You'
+  const timeline = [{ step: 'submitted', time: ticket.createdAt, by: ticket.submittedBy?.name || 'You' }]
+  const author = ticket.submittedBy?.name || 'Student'
 
   const card = dark ? 'bg-[#1e293b]' : 'bg-white'
   const cardBorder = dark ? 'border-white/6' : 'border-[#E4E8EE]'

@@ -639,24 +639,47 @@ export default function AuthPage() {
                 </button>
               </div>
 
-              <label className="flex items-start gap-2.5 cursor-pointer group pt-1">
-                <div className="relative mt-0.5">
-                  <input type="checkbox" name="agreeTerms" checked={form.agreeTerms} onChange={handleChange} className="peer sr-only" required />
-                  <div className="w-[18px] h-[18px] rounded-md border-[1.5px] border-mist bg-white
-                    peer-checked:bg-maroon peer-checked:border-maroon
-                    transition-all duration-200 flex items-center justify-center
-                    group-hover:border-ink/30">
+              <div className="flex items-start gap-2.5 pt-1">
+                <div 
+                  className="relative mt-0.5 cursor-pointer group"
+                  onClick={() => {
+                    setForm(prev => ({ ...prev, agreeTerms: !prev.agreeTerms }));
+                    if (fieldErrors.agreeTerms) {
+                      setFieldErrors(prev => {
+                        const next = { ...prev };
+                        delete next.agreeTerms;
+                        return next;
+                      });
+                    }
+                  }}
+                >
+                  <input id="agreeTerms" type="checkbox" name="agreeTerms" checked={form.agreeTerms} readOnly className="sr-only" required />
+                  <div className={`w-[18px] h-[18px] rounded-md border-[1.5px] transition-all duration-200 flex items-center justify-center ${
+                    form.agreeTerms ? 'bg-maroon border-maroon' : 'border-mist bg-white group-hover:border-ink/30'
+                  }`}>
                     {form.agreeTerms && (
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <svg className="w-3 h-3 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     )}
                   </div>
                 </div>
-                <span className="text-[13px] text-ink/35 group-hover:text-ink/50 transition-colors leading-relaxed">
+                <span 
+                  className="text-[13px] text-ink/35 hover:text-ink/50 transition-colors leading-relaxed cursor-pointer"
+                  onClick={() => {
+                    setForm(prev => ({ ...prev, agreeTerms: !prev.agreeTerms }));
+                    if (fieldErrors.agreeTerms) {
+                      setFieldErrors(prev => {
+                        const next = { ...prev };
+                        delete next.agreeTerms;
+                        return next;
+                      });
+                    }
+                  }}
+                >
                   I agree to the <span className="text-maroon font-medium">UNILAG QAS Policy</span> and <span className="text-maroon font-medium">Terms of Service</span>
                 </span>
-              </label>
+              </div>
               <FieldError message={errText('agreeTerms')} />
               </div>
               )}

@@ -19,14 +19,7 @@ const REPORT_TYPES = [
   )},
 ]
 
-const MOCK_DEPARTMENTS = [
-  { name: 'Computer Science', complaints: 23, resolved: 18, satisfaction: 82 },
-  { name: 'Mathematics', complaints: 15, resolved: 12, satisfaction: 78 },
-  { name: 'Physics', complaints: 11, resolved: 8, satisfaction: 75 },
-  { name: 'Chemistry', complaints: 18, resolved: 14, satisfaction: 80 },
-  { name: 'Engineering', complaints: 31, resolved: 24, satisfaction: 76 },
-  { name: 'Medicine', complaints: 8, resolved: 7, satisfaction: 88 },
-]
+const departments = []
 
 export default function AdminReports() {
   const [generating, setGenerating] = useState(null)
@@ -102,8 +95,13 @@ export default function AdminReports() {
           </select>
         </div>
         <div className="space-y-3">
-          {MOCK_DEPARTMENTS.map(dept => {
-            const resolutionRate = Math.round((dept.resolved / dept.complaints) * 100)
+          {departments.length === 0 ? (
+            <div className="text-center py-8 bg-paper rounded-2xl border border-mist/50">
+              <p className="text-[14px] text-ink/40 font-medium">No departmental data available.</p>
+            </div>
+          ) : (
+            departments.map(dept => {
+              const resolutionRate = Math.round((dept.resolved / dept.complaints) * 100)
             return (
               <div key={dept.name} className="flex items-center gap-4 p-3 rounded-xl hover:bg-cream/50 transition-colors">
                 <div className="flex-1 min-w-0">
@@ -121,9 +119,9 @@ export default function AdminReports() {
                 </div>
                 <span className="text-[12px] font-mono font-semibold text-ink/50 w-10 text-right">{resolutionRate}%</span>
               </div>
-            )
-          })}
-        </div>
+          )
+        }))}
+      </div>
       </div>
     </div>
   )

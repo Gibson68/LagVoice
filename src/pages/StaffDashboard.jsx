@@ -3,41 +3,48 @@
  * Filterable table, status updates, bulk actions
  */
 import { useState, useEffect } from 'react'
-import StatusPill from '../components/common/StatusPill/StatusPill'
+import { useNavigate } from 'react-router-dom'
 import { TICKET_STATUS_CONFIG } from '../utils/constants'
-import { formatRelativeTime } from '../utils/formatters'
 import { ticketService } from '../services/ticketService'
+import { formatRelativeTime } from '../utils/formatters'
 
 const CATEGORIES = ['all', 'Academic', 'Infrastructure', 'Admin', 'Welfare', 'General']
 const STATUSES = ['all', 'pending', 'under_review', 'resolved', 'escalated']
 
-export default function AdminComplaints() {
+export default function StaffDashboard() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
-
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await ticketService.updateStatus(id, newStatus)
+      setTickets(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t))
+    } catch (e) {
+      alert('Failed to update status')
+    }
+  }
+
   useEffect(() => {
-    const fetchTickets = async () => {
-      setLoading(true)
+    const loadTickets = async () => {
       try {
-        const response = await ticketService.getTickets()
-        setTickets(response.tickets || response.data || [])
-      } catch (err) {
-        console.error('Failed to load tickets', err)
+        const data = await ticketService.getTickets()
+        setTickets(data.tickets || [])
+      } catch (e) {
+        console.error('Failed to load tickets', e)
       } finally {
         setLoading(false)
       }
     }
-    fetchTickets()
+    loadTickets()
   }, [])
 
   const filtered = tickets.filter(c => {
-    const title = c.title || ''
-    const trackingId = c.trackingId || ''
-    const matchSearch = !search || title.toLowerCase().includes(search.toLowerCase()) || trackingId.toLowerCase().includes(search.toLowerCase())
+    const trackingIdStr = c.trackingId || `UNILAG-TKT-${c.id}`
+    const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase()) || trackingIdStr.toLowerCase().includes(search.toLowerCase())
     const matchStatus = statusFilter === 'all' || c.status === statusFilter
     const matchCategory = categoryFilter === 'all' || c.category === categoryFilter
     return matchSearch && matchStatus && matchCategory
@@ -48,11 +55,11 @@ export default function AdminComplaints() {
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-[11px] font-bold text-gold-dark uppercase tracking-[0.15em] mb-1">Complaints</p>
-          <h1 className="text-[1.8rem] lg:text-[2.2rem] font-bold text-ink leading-tight tracking-tight">Management</h1>
+          <p className="text-[11px] font-bold text-gold-dark uppercase tracking-[0.15em] mb-1">Quality Assurance</p>
+          <h1 className="text-[1.8rem] lg:text-[2.2rem] font-bold text-ink leading-tight tracking-tight">Helpdesk</h1>
         </div>
         <div className="text-[12px] text-ink/30">
-          {filtered.length} complaint{filtered.length !== 1 ? 's' : ''}
+          {filtered.length} ticket{filtered.length !== 1 ? 's' : ''}
         </div>
       </div>
 
@@ -66,9 +73,7 @@ export default function AdminComplaints() {
         ].map(s => (
           <div key={s.label} className="bg-paper rounded-xl border border-mist/50 p-3">
             <p className="text-[10px] text-ink/30 uppercase tracking-[0.12em] font-semibold">{s.label}</p>
-            <p className="text-[1.5rem] font-bold font-mono mt-1" style={{ color: s.color }}>
-              {loading ? '-' : s.count}
-            </p>
+            <p className="text-[1.5rem] font-bold font-mono mt-1" style={{ color: s.color }}>{s.count}</p>
           </div>
         ))}
       </div>
@@ -118,20 +123,7 @@ export default function AdminComplaints() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="7" className="px-5 py-12 text-center text-[13px] text-ink/40 font-medium">
-                    Loading complaints...
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-5 py-12 text-center text-[13px] text-ink/40 font-medium">
-                    No complaints found.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map(c => {
+              {filtered.map(c => {
                 const status = TICKET_STATUS_CONFIG[c.status]
                 return (
                   <tr key={c.id} className="border-b border-mist/15 last:border-0 hover:bg-cream/30 transition-colors">
@@ -146,7 +138,17 @@ export default function AdminComplaints() {
                       <span className="text-[12px] text-ink/50">{c.dept}</span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <StatusPill status={status} />
+                      <select
+                        value={c.status}
+                        onChange={(e) => handleStatusChange(c.id, e.target.value)}
+                        className="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-[0.08em] border border-mist outline-none cursor-pointer"
+                        style={{ color: status?.color, backgroundColor: status?.bgColor }}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="under_review">Under Review</option>
+                        <option value="escalated">Escalated</option>
+                        <option value="resolved">Resolved</option>
+                      </select>
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`text-[10px] font-bold uppercase tracking-wider ${
@@ -159,13 +161,13 @@ export default function AdminComplaints() {
                       <span className="text-[11px] text-ink/25 font-mono">{formatRelativeTime(c.createdAt)}</span>
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <button className="text-[11px] text-maroon font-semibold hover:text-maroon-dark transition-colors">
+                      <button onClick={() => navigate(`/staff/ticket/${c.id}`)} className="text-[11px] text-maroon font-semibold hover:text-maroon-dark transition-colors">
                         View
                       </button>
                     </td>
                   </tr>
                 )
-              }))}
+              })}
             </tbody>
           </table>
         </div>

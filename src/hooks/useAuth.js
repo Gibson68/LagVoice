@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { useCallback } from 'react'
-import { loginUser, registerUser as registerUserThunk, logout, clearError } from '../store/authSlice'
+import { loginUser, registerUser, logout, clearError, updateUser } from '../store/authSlice'
 import { authService } from '../services/authService'
 import { ROLES } from '../utils/constants'
 
@@ -14,14 +14,29 @@ export function useAuth() {
   )
 
   const login = useCallback(
-    (email, password, role, staffCategory = '') =>
-      dispatch(loginUser({ email, password, role, staffCategory })),
+    (email, password, role) => dispatch(loginUser({ email, password, role })),
     [dispatch]
   )
 
-  /** Creates the account record, then signs the new user straight in. */
-  const registerUser = useCallback(
-    (userData) => dispatch(registerUserThunk(userData)),
+  const register = useCallback(
+    async (userData) => {
+      const resultAction = await dispatch(registerUser({ ...userData, name: `${userData.firstName} ${userData.lastName}` }))
+      if (registerUser.rejected.match(resultAction)) {
+        throw new Error(resultAction.payload)
+      }
+      return resultAction.payload
+    },
+    [dispatch]
+  )
+
+  const updateProfile = useCallback(
+    async (userData) => {
+      const response = await authService.updateProfile(userData)
+      if (response.success) {
+        dispatch(updateUser(response.user))
+      }
+      return response
+    },
     [dispatch]
   )
 
@@ -35,6 +50,7 @@ export function useAuth() {
   const isStudent = role === ROLES.STUDENT
   const isFaculty = role === ROLES.FACULTY
   const isAdmin = role === ROLES.ADMIN
+  const isExternal = role === ROLES.EXTERNAL
 
   return {
     user,
@@ -44,11 +60,13 @@ export function useAuth() {
     loading,
     error,
     login,
-    registerUser,
+    registerUser: register,
+    updateProfile,
     logout: logoutUser,
     clearError: clearAuthError,
     isStudent,
     isFaculty,
     isAdmin,
+    isExternal,
   }
 }

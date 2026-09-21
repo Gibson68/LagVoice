@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String    @unique
+  password   String
+  role       String    // student, faculty, admin
+  studentId  String?
+  staffId    String?
+  department String?
+  faculty    String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  tickets    Ticket[]  @relation("SubmittedTickets")
+  comments   Comment[]
+}
+
+model Ticket {
+  id          Int       @id @default(autoincrement())
+  trackingId  String    @unique
+  title       String
+  description String
+  category    String
+  subcategory String
+  urgency     String
+  status      String    @default("pending")
+  location    String?
+  isAnonymous Boolean   @default(false)
+  images      String?   // JSON string of paths or comma separated
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  submittedBy   User?     @relation("SubmittedTickets", fields: [submittedById], references: [id])
+  submittedById Int?
+
+  comments    Comment[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  message   String
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId  Int
+
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+

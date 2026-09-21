@@ -24,6 +24,8 @@ const AdminPolls = lazy(() => import('./pages/AdminPolls'))
 const AdminReports = lazy(() => import('./pages/AdminReports'))
 const StudentPolls = lazy(() => import('./pages/StudentPolls'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const StaffDashboard = lazy(() => import('./pages/StaffDashboard'))
+import StaffLayout from './components/common/Layout/StaffLayout'
 
 // Loading fallback
 function PageLoader() {
@@ -68,6 +70,32 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        {/* Staff / Non-Staff Routes */}
+        <Route
+          path="/staff"
+          element={
+            <ProtectedRoute allowedRoles={['staff', 'non-staff']}>
+              <StaffLayout><StaffDashboard /></StaffLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/ticket/:id"
+          element={
+            <ProtectedRoute allowedRoles={['staff', 'non-staff']}>
+              <StaffLayout><TicketDetail /></StaffLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/non-staff"
+          element={
+            <ProtectedRoute allowedRoles={['staff', 'non-staff']}>
+              <StaffLayout><StaffDashboard /></StaffLayout>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/student/feedback"
           element={

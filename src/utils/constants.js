@@ -23,6 +23,9 @@ export const ROLES = {
   STUDENT: 'student',
   FACULTY: 'faculty',
   ADMIN: 'admin',
+  STAFF: 'staff',
+  NON_STAFF: 'non-staff',
+  EXTERNAL: 'external',
 }
 
 // Feedback categories with icons and colors
@@ -131,7 +134,9 @@ export const RATING_LABELS = [
 ]
 
 // API base URL
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+export const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
 
 // Mock tracking ID prefix
 export const TRACKING_PREFIX = 'UNILAG'

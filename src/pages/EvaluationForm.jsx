@@ -8,7 +8,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCoursesForDepartment } from '../utils/courses'
-import { getProfile } from '../services/userService'
+import { useAuth } from '../hooks/useAuth'
 import { STORAGE_KEYS, readArray, writeJSON } from '../utils/storage'
 
 const LIKERT_OPTIONS = [
@@ -52,7 +52,7 @@ function StarRating({ value, onChange, size = 'md' }) {
 
 export default function EvaluationForm() {
   const navigate = useNavigate()
-  const profile = getProfile()
+  const { user: profile } = useAuth()
   const department = profile.department || ''
   const courses = getCoursesForDepartment(department)
 

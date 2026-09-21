@@ -1,31 +1,18 @@
 /**
  * TicketList — Student Ticket Tracking
- * Real submissions from the feedback form appear at the top (newest first),
- * followed by demo tickets. Filterable list, status badges, search.
+ * Real submissions from the feedback form appear at the top (newest first).
+ * Filterable list, status badges, search.
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TICKET_STATUS_CONFIG } from '../utils/constants'
 import { formatRelativeTime } from '../utils/formatters'
 import { useDarkMode } from '../hooks/useDarkMode'
 import StatusPill from '../components/common/StatusPill/StatusPill'
-import { STORAGE_KEYS, readArray } from '../utils/storage'
-
-const MOCK_TICKETS = [
-  { id: 42, trackingId: 'UNILAG-00042', title: 'Broken AC in Lecture Hall B', status: 'under_review', category: 'Infrastructure', urgency: 'high', createdAt: new Date(Date.now() - 3600000).toISOString() },
-  { id: 38, trackingId: 'UNILAG-00038', title: 'Water supply outage in Hall 4', status: 'resolved', category: 'Facilities', urgency: 'medium', createdAt: new Date(Date.now() - 86400000).toISOString() },
-  { id: 35, trackingId: 'UNILAG-00035', title: 'Slow internet on student portal', status: 'pending', category: 'Admin', urgency: 'low', createdAt: new Date(Date.now() - 172800000).toISOString() },
-  { id: 33, trackingId: 'UNILAG-00033', title: 'Broken projector in CS Lab 3', status: 'escalated', category: 'Infrastructure', urgency: 'high', createdAt: new Date(Date.now() - 259200000).toISOString() },
-  { id: 30, trackingId: 'UNILAG-00030', title: 'Exam timetable conflict for 300L', status: 'resolved', category: 'Academic', urgency: 'high', createdAt: new Date(Date.now() - 432000000).toISOString() },
-  { id: 28, trackingId: 'UNILAG-00028', title: 'Request for extended library hours', status: 'resolved', category: 'General', urgency: 'low', createdAt: new Date(Date.now() - 604800000).toISOString() },
-  { id: 25, trackingId: 'UNILAG-00025', title: 'Fee payment discrepancy for 200L', status: 'under_review', category: 'Admin', urgency: 'medium', createdAt: new Date(Date.now() - 691200000).toISOString() },
-]
+import { ticketService } from '../services/ticketService'
 
 const STATUS_FILTERS = ['all', 'pending', 'under_review', 'resolved', 'escalated']
 const CATEGORY_FILTERS = ['all', 'Academic', 'Infrastructure', 'Admin', 'General']
-
-/** Feedback form stores status 'submitted' — normalise it to a status the UI knows. */
-const normaliseStatus = (status) => (status === 'submitted' ? 'pending' : status || 'pending')
 
 export default function TicketList() {
   const navigate = useNavigate()
@@ -33,28 +20,32 @@ export default function TicketList() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
-  const [submitted] = useState(() =>
-    readArray(STORAGE_KEYS.complaints)
-      .filter((c) => c && typeof c === 'object' && c.id)
-      .map((c) => ({
-        id: c.id,
-        trackingId: c.trackingId || `UNILAG-${c.id}`,
-        title: c.title || 'Untitled feedback',
-        status: normaliseStatus(c.status),
-        category: c.category || 'General',
-        categoryId: c.categoryId,
-        urgency: c.urgency || 'medium',
-        createdAt: c.createdAt || new Date().toISOString(),
-        mine: true,
-      })),
-  )
+  
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const tickets = [...submitted, ...MOCK_TICKETS].sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-  )
+  useEffect(() => {
+    const fetchTickets = async () => {
+      setLoading(true)
+      try {
+        const response = await ticketService.getTickets()
+        // API returns { success: true, tickets: [...] } based on our test
+        const data = response.tickets || response.data || []
+        setTickets(data)
+      } catch (err) {
+        setError('Failed to fetch tickets. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchTickets()
+  }, [])
 
   const filtered = tickets.filter(t => {
-    const matchSearch = !search || t.title.toLowerCase().includes(search.toLowerCase()) || t.trackingId.toLowerCase().includes(search.toLowerCase())
+    const title = t.title || ''
+    const trackingId = t.trackingId || ''
+    const matchSearch = !search || title.toLowerCase().includes(search.toLowerCase()) || trackingId.toLowerCase().includes(search.toLowerCase())
     const matchStatus = statusFilter === 'all' || t.status === statusFilter
     const matchCategory = categoryFilter === 'all' || t.category === categoryFilter
     return matchSearch && matchStatus && matchCategory
@@ -136,7 +127,15 @@ export default function TicketList() {
 
       {/* Ticket List */}
       <div className="space-y-2">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className={`text-center py-12 ${card} rounded-2xl border ${cardBorder}`}>
+            <p className={`text-[14px] font-semibold ${text3}`}>Loading tickets...</p>
+          </div>
+        ) : error ? (
+          <div className={`text-center py-12 ${card} rounded-2xl border ${cardBorder}`}>
+            <p className={`text-[14px] font-semibold text-red-500`}>{error}</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className={`text-center py-12 ${card} rounded-2xl border ${cardBorder}`}>
             <div className={`w-12 h-12 mx-auto rounded-full ${dark ? 'bg-white/5' : 'bg-[#F5F7FA]'} flex items-center justify-center mb-4`}>
               <svg className={`w-6 h-6 ${text3}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

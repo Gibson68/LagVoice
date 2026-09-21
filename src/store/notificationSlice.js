@@ -1,37 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-const mockNotifications = [
-  {
-    id: 1,
-    title: 'Ticket Updated',
-    message: 'Your complaint #UNILAG-00042 has been updated to "Under Review"',
-    type: 'info',
-    read: false,
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: 2,
-    title: 'New Poll Available',
-    message: 'Campus Security survey is now available. Complete it before Friday.',
-    type: 'info',
-    read: false,
-    createdAt: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    id: 3,
-    title: 'Ticket Resolved',
-    message: 'Your complaint #UNILAG-00038 has been resolved. Thank you for your patience!',
-    type: 'success',
-    read: true,
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-]
-
 const notificationSlice = createSlice({
   name: 'notifications',
   initialState: {
-    items: mockNotifications,
-    unreadCount: mockNotifications.filter((n) => !n.read).length,
+    items: [],
+    unreadCount: 0,
   },
   reducers: {
     addNotification(state, action) {

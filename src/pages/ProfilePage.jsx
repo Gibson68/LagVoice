@@ -12,27 +12,9 @@ import { useAuth } from '../hooks/useAuth'
 import { formatRelativeTime } from '../utils/formatters'
 import { useDarkMode } from '../hooks/useDarkMode'
 import { STORAGE_KEYS, readObject, removeKey, writeJSON } from '../utils/storage'
-import {
-  DEPARTMENTS,
-  FACULTIES,
-  GENDERS,
-  LEVELS,
-  PROGRAMMES,
-  SESSIONS,
-  deleteAccount,
-  getProfile,
-  roleLabel,
-  saveProfile,
-} from '../services/userService'
-
-const ACTIVITY = [
-  { id: 1, action: 'Submitted feedback', detail: 'Broken AC in Lecture Hall B', time: new Date(Date.now() - 3600000).toISOString(), icon: 'feedback', color: '#1266f1' },
-  { id: 2, action: 'Completed evaluation', detail: 'CSC 301 — Data Structures', time: new Date(Date.now() - 86400000).toISOString(), icon: 'eval', color: '#ffa900' },
-  { id: 3, action: 'Voted in poll', detail: 'Campus security survey', time: new Date(Date.now() - 172800000).toISOString(), icon: 'poll', color: '#b23cfd' },
-  { id: 4, action: 'Ticket resolved', detail: 'Water supply outage in Hall 4', time: new Date(Date.now() - 259200000).toISOString(), icon: 'resolved', color: '#00b74a' },
-  { id: 5, action: 'Submitted feedback', detail: 'Slow internet on student portal', time: new Date(Date.now() - 345600000).toISOString(), icon: 'feedback', color: '#1266f1' },
-  { id: 6, action: 'Account created', detail: 'Joined LagVoice', time: new Date(Date.now() - 604800000).toISOString(), icon: 'account', color: '#0e52c1' },
-]
+import { DEPARTMENTS, FACULTIES, GENDERS, LEVELS, PROGRAMMES, SESSIONS, roleLabel } from '../services/userService'
+import { ticketService } from '../services/ticketService'
+const ACTIVITY = []
 
 const ICONS = {
   feedback: <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />,
@@ -196,12 +178,13 @@ export default function ProfilePage() {
   const { logout } = useAuth()
   const dark = useDarkMode()
   const fileRef = useRef(null)
-
-  const [profile, setProfile] = useState(getProfile)
-  const [form, setForm] = useState(getProfile)
+  const { user, updateProfile } = useAuth()
+  const [profile, setProfile] = useState(user || {})
+  const [form, setForm] = useState(user || {})
   const [editing, setEditing] = useState(false)
   const [errors, setErrors] = useState({})
   const [notice, setNotice] = useState('')
+  const [loading, setLoading] = useState(false)
   const [prefs, setPrefs] = useState(() => ({
     email: true, push: true, sms: false, complaints: true, evaluations: true, polls: true,
     ...readObject(STORAGE_KEYS.prefs),
@@ -213,6 +196,27 @@ export default function ProfilePage() {
   const [showDelete, setShowDelete] = useState(false)
   const [deleteWord, setDeleteWord] = useState('')
   const [prefsSaved, setPrefsSaved] = useState(false)
+  const [ticketStats, setTicketStats] = useState({ filed: 0, resolved: 0 })
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        const response = await ticketService.getTickets()
+        const data = response.tickets || response.data || []
+        const resolvedCount = data.filter(t => t.status?.toLowerCase() === 'resolved').length
+        setTicketStats({ filed: data.length, resolved: resolvedCount })
+      } catch (err) {
+        console.error('Failed to fetch ticket stats', err)
+      }
+    }
+    fetchTickets()
+  }, [])
+  // Sync profile when user updates
+  useEffect(() => {
+    if (user) {
+      setProfile(user)
+    }
+  }, [user])
 
   // Preferences are the one thing saved as you toggle, no submit button.
   useEffect(() => {
@@ -239,9 +243,7 @@ export default function ProfilePage() {
     const next = {}
     if (!form.name.trim()) next.name = 'Enter your full name'
     if (!EMAIL_PATTERN.test(form.email.trim())) next.email = 'Enter a valid email address'
-    if (!form.studentId.trim()) next.studentId = 'Enter your matric number'
-    if (form.phone.trim() && !/^[0-9+\-\s()]{7,20}$/.test(form.phone.trim())) next.phone = 'Enter a valid phone number'
-    if (form.guardianPhone.trim() && !/^[0-9+\-\s()]{7,20}$/.test(form.guardianPhone.trim())) next.guardianPhone = 'Enter a valid phone number'
+    if (form.role === 'student' && !form.studentId?.trim()) next.studentId = 'Enter your matric number'
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -259,13 +261,29 @@ export default function ProfilePage() {
     setEditing(false)
   }
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
     if (!validate()) return
-    setProfile(saveProfile(form))
-    setEditing(false)
-    setNotice('Account details saved.')
-    setTimeout(() => setNotice(''), 2500)
+    setLoading(true)
+    try {
+      // Send whichever ID field is relevant
+      const updateData = {
+        name: form.name,
+        department: form.department,
+        faculty: form.faculty
+      }
+      if (user?.role === 'staff' || user?.role === 'non-staff') updateData.staffId = form.staffId
+      else updateData.studentId = form.studentId
+
+      await updateProfile(updateData)
+      setEditing(false)
+      setNotice('Account details saved.')
+      setTimeout(() => setNotice(''), 2500)
+    } catch (err) {
+      setNotice(err.message || 'Failed to update profile')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleAvatar = (e) => {
@@ -324,10 +342,10 @@ export default function ProfilePage() {
   }
 
   const stats = [
-    { label: 'Complaints filed', value: '3', color: '#1266f1' },
-    { label: 'Resolved', value: '1', color: '#00b74a' },
-    { label: 'Evaluations done', value: '4', color: '#ffa900' },
-    { label: 'Polls voted', value: '2', color: '#b23cfd' },
+    { label: 'Complaints filed', value: ticketStats.filed.toString(), color: '#1266f1' },
+    { label: 'Resolved', value: ticketStats.resolved.toString(), color: '#00b74a' },
+    { label: 'Evaluations done', value: '0', color: '#ffa900' },
+    { label: 'Polls voted', value: '0', color: '#b23cfd' },
   ]
 
   const initials = profile.name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
